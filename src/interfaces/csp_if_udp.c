@@ -62,12 +62,12 @@ CSP_DEFINE_TASK(csp_if_udp_rx_task) {
 
 	csp_iface_t * iface = param;
 
-    fd_set socks;
-    FD_ZERO(&socks);
-    FD_SET(sockfd, &socks);
+	fd_set socks;
+	FD_ZERO(&socks);
+	FD_SET(sockfd, &socks);
 
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
-    struct timeval timeout = {.tv_sec = 1, .tv_usec = 0};
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+	struct timeval timeout = {.tv_sec = 1, .tv_usec = 0};
 
     running = true;
 	while(running) {
@@ -82,13 +82,13 @@ CSP_DEFINE_TASK(csp_if_udp_rx_task) {
 
 			char buffer[iface->mtu + 4];
 			unsigned int peer_addr_len = sizeof(peer_addr);
-            int received_len = 0;
-            if (select(sockfd + 1, &socks, NULL, NULL, &timeout) > 0){
-              received_len = recvfrom(sockfd, (char *)buffer, iface->mtu + 4, MSG_WAITALL, (struct sockaddr *) &peer_addr, &peer_addr_len);
-            }
-            else{
-              continue;
-            }
+			int received_len = 0;
+			if (select(sockfd + 1, &socks, NULL, NULL, &timeout) > 0){
+				received_len = recvfrom(sockfd, (char *)buffer, iface->mtu + 4, MSG_WAITALL, (struct sockaddr *) &peer_addr, &peer_addr_len);
+			}
+			else{
+				continue;
+			}
 
 			/* Check for short */
 			if (received_len < 4) {
@@ -114,7 +114,7 @@ CSP_DEFINE_TASK(csp_if_udp_rx_task) {
 
 	}
 
-    csp_thread_exit();
+	csp_thread_exit();
 
 	return CSP_TASK_RETURN;
 
@@ -145,6 +145,6 @@ void csp_if_udp_init(csp_iface_t * iface, char * host) {
 
 
 void csp_if_udp_init_w_port(csp_iface_t * iface, char * host, size_t port) {
-    _udp_port = port;
-    csp_if_udp_init(iface, host);
+	_udp_port = port;
+	csp_if_udp_init(iface, host);
 }
