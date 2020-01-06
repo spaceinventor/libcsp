@@ -332,12 +332,20 @@ int csp_route_work(uint32_t timeout) {
 	return 0;
 }
 
+static bool running;
+void csp_route_stop_task(){
+  running = false;
+}
+
 CSP_DEFINE_TASK(csp_task_router) {
 
 	/* Here there be routing */
-	while (1) {
+    running = true;
+	while (running) {
 		csp_route_work(FIFO_TIMEOUT);
 	}
+
+    csp_thread_exit();
 
 	return CSP_TASK_RETURN;
 

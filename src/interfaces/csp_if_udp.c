@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/csp_interface.h>
 #include <csp/arch/csp_thread.h>
 
+static size_t _udp_port = 9000;
 struct sockaddr_in peer_addr = {0};
 
 static int csp_if_udp_tx(csp_iface_t * interface, csp_packet_t * packet, uint32_t timeout) {
@@ -46,29 +47,48 @@ static int csp_if_udp_tx(csp_iface_t * interface, csp_packet_t * packet, uint32_
 	return CSP_ERR_NONE;
 }
 
+static bool running;
+void csp_if_udp_stop_rx_task(){
+  running = false;
+}
+
 CSP_DEFINE_TASK(csp_if_udp_rx_task) {
 
 	int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 	struct sockaddr_in server_addr = {0};
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_addr.sin_port = htons(9600);
+	server_addr.sin_port = htons(_udp_port);
 
 	csp_iface_t * iface = param;
 
-	while(1) {
+    fd_set socks;
+    FD_ZERO(&socks);
+    FD_SET(sockfd, &socks);
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int));
+    struct timeval timeout = {.tv_sec = 1, .tv_usec = 0};
+
+    running = true;
+	while(running) {
 
 		if (bind(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-			printf("UDP server waiting for port 9600\n");
+			printf("UDP server waiting for port %lu\n", _udp_port);
 			sleep(1);
 			continue;
 		}
 
-		while(1) {
+		while(running) {
 
 			char buffer[iface->mtu + 4];
 			unsigned int peer_addr_len = sizeof(peer_addr);
-			int received_len = recvfrom(sockfd, (char *)buffer, iface->mtu + 4, MSG_WAITALL, (struct sockaddr *) &peer_addr, &peer_addr_len);
+            int received_len = 0;
+            if (select(sockfd + 1, &socks, NULL, NULL, &timeout) > 0){
+              received_len = recvfrom(sockfd, (char *)buffer, iface->mtu + 4, MSG_WAITALL, (struct sockaddr *) &peer_addr, &peer_addr_len);
+            }
+            else{
+              continue;
+            }
 
 			/* Check for short */
 			if (received_len < 4) {
@@ -93,6 +113,8 @@ CSP_DEFINE_TASK(csp_if_udp_rx_task) {
 		}
 
 	}
+
+    csp_thread_exit();
 
 	return CSP_TASK_RETURN;
 
@@ -119,4 +141,10 @@ void csp_if_udp_init(csp_iface_t * iface, char * host) {
 	iface->nexthop = csp_if_udp_tx,
 	csp_iflist_add(iface);
 
+}
+
+
+void csp_if_udp_init_w_port(csp_iface_t * iface, char * host, size_t port) {
+    _udp_port = port;
+    csp_if_udp_init(iface, host);
 }

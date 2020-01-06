@@ -272,6 +272,11 @@ int csp_bind(csp_socket_t *socket, uint8_t port);
 int csp_route_start_task(unsigned int task_stack_size, unsigned int priority);
 
 /**
+ * Stop the router task
+ */
+void csp_route_stop_task();
+
+/**
  * Call the router worker function manually (without the router task)
  * This must be run inside a loop or called periodically for the csp router to work.
  * Use this function instead of calling and starting the router task.

@@ -27,11 +27,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  * RX task:
  *   A server task will attempt at binding to ip 0.0.0.0 port 9600
  *   If this fails, it is because another udp server is already running.
- *   The server task will continue attemting the bind and will not exit before the application is closed.
+ *   Unless exlpicitly stopped with csp_if_udp_stop_rx_task, the server task will continue attemting the bind and will not exit before the application is closed.
  *
  * TX peer:
  *   Outgoing CSP packets will be transferred to the peer specified by the host argument
  */
 void csp_if_udp_init(csp_iface_t * iface, char * host);
+
+/**
+ * Setup UDP peer
+ *
+ * Starts a UDP server at on the provided port. See csp_if_udp_init(csp_iface_t * iface, char * host).
+ */
+void csp_if_udp_init_w_port(csp_iface_t * iface, char * host, size_t port);
+
+/**
+ * Stop the UDP rx task
+ */
+void csp_if_udp_stop_rx_task();
+
 
 #endif /* CSP_IF_UDP_H_ */
