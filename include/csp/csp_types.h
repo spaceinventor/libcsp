@@ -21,203 +21,210 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef CSP_TYPES_H_
 #define CSP_TYPES_H_
 
-#include <csp_config.h>
+/**
+   @file
+   Basic types.
+*/
 
-/* Make bool for compilers without stdbool.h */
-#ifdef CSP_HAVE_STDBOOL_H
+#include <stdint.h>
+#include <stddef.h>
 #include <stdbool.h>
-#else
-#define bool int
-#define false 0
-#define true !false
+
+#include <csp_autoconfig.h> // -> CSP_X defines (compile configuration)
+#include <csp/csp_error.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if (CSP_BIG_ENDIAN && CSP_LITTLE_ENDIAN)
+#error "Only define/set either CSP_BIG_ENDIAN or CSP_LITTLE_ENDIAN"
 #endif
 
 /**
- * RESERVED PORTS (SERVICES)
- */
-
-enum csp_reserved_ports_e {
-	CSP_CMP				= 0,
-	CSP_PING			= 1,
-	CSP_PS				= 2,
-	CSP_MEMFREE			= 3,
-	CSP_REBOOT			= 4,
-	CSP_BUF_FREE		= 5,
-	CSP_UPTIME			= 6,
-	CSP_ANY				= 254,
-	CSP_PROMISC			= 255,
-};
-
+   Reserved ports for CSP services.
+*/
 typedef enum {
-	CSP_PRIO_CRITICAL		= 0,
-	CSP_PRIO_HIGH			= 1,
-	CSP_PRIO_NORM			= 2,
-	CSP_PRIO_LOW			= 3,
+	CSP_CMP				= 0,   //!< CSP management, e.g. memory, routes, stats
+	CSP_PING			= 1,   //!< Ping - return ping
+	CSP_PS				= 2,   //!< Current process list
+	CSP_MEMFREE			= 3,   //!< Free memory
+	CSP_REBOOT			= 4,   //!< Reboot, see #CSP_REBOOT_MAGIC and #CSP_REBOOT_SHUTDOWN_MAGIC
+	CSP_BUF_FREE		= 5,   //!< Free CSP buffers
+	CSP_UPTIME			= 6,   //!< Uptime
+} csp_service_port_t;
+
+/** Listen on all ports, primarily used with csp_bind() */
+#define CSP_ANY				255
+
+/**
+   Message priority.
+*/
+typedef enum {
+	CSP_PRIO_CRITICAL		= 0, //!< Critical
+	CSP_PRIO_HIGH			= 1, //!< High
+	CSP_PRIO_NORM			= 2, //!< Normal (default)
+	CSP_PRIO_LOW			= 3, //!< Low
 } csp_prio_t;
 
-#define CSP_PRIORITIES			(1 << CSP_ID_PRIO_SIZE)
-
-#ifdef CSP_USE_QOS
-#define CSP_ROUTE_FIFOS			CSP_PRIORITIES
-#define CSP_RX_QUEUES			CSP_PRIORITIES
-#else
-#define CSP_ROUTE_FIFOS			1
-#define CSP_RX_QUEUES			1
-#endif
-
-/** Size of bit-fields in CSP header */
-#define CSP_ID_PRIO_SIZE		2
-#define CSP_ID_HOST_SIZE		5
-#define CSP_ID_PORT_SIZE		6
-#define CSP_ID_FLAGS_SIZE		8
-
-#define CSP_HEADER_BITS			(CSP_ID_PRIO_SIZE + 2 * CSP_ID_HOST_SIZE + 2 * CSP_ID_PORT_SIZE + CSP_ID_FLAGS_SIZE)
-#define CSP_HEADER_LENGTH		(CSP_HEADER_BITS / 8)
-
-#if CSP_HEADER_BITS != 32 && __GNUC__
-#error "Header length must be 32 bits"
-#endif
-
-/** Highest number to be entered in field */
-#define CSP_ID_PRIO_MAX			((1 << (CSP_ID_PRIO_SIZE)) - 1)
-#define CSP_ID_HOST_MAX			((1 << (CSP_ID_HOST_SIZE)) - 1)
-#define CSP_ID_PORT_MAX			((1 << (CSP_ID_PORT_SIZE)) - 1)
-#define CSP_ID_FLAGS_MAX		((1 << (CSP_ID_FLAGS_SIZE)) - 1)
-
-/** Identifier field masks */
-#define CSP_ID_PRIO_MASK		((uint32_t) CSP_ID_PRIO_MAX << (CSP_ID_FLAGS_SIZE + 2 * CSP_ID_PORT_SIZE + 2 * CSP_ID_HOST_SIZE))
-#define CSP_ID_SRC_MASK	 		((uint32_t) CSP_ID_HOST_MAX << (CSP_ID_FLAGS_SIZE + 2 * CSP_ID_PORT_SIZE + 1 * CSP_ID_HOST_SIZE))
-#define CSP_ID_DST_MASK	 		((uint32_t) CSP_ID_HOST_MAX << (CSP_ID_FLAGS_SIZE + 2 * CSP_ID_PORT_SIZE))
-#define CSP_ID_DPORT_MASK   		((uint32_t) CSP_ID_PORT_MAX << (CSP_ID_FLAGS_SIZE + 1 * CSP_ID_PORT_SIZE))
-#define CSP_ID_SPORT_MASK   		((uint32_t) CSP_ID_PORT_MAX << (CSP_ID_FLAGS_SIZE))
-#define CSP_ID_FLAGS_MASK		((uint32_t) CSP_ID_FLAGS_MAX << (0))
-
-#define CSP_ID_CONN_MASK		(CSP_ID_SRC_MASK | CSP_ID_DST_MASK | CSP_ID_DPORT_MASK | CSP_ID_SPORT_MASK)
-
-/** @brief This union defines a CSP identifier and allows access to the individual fields or the entire identifier */
-typedef union {
-	uint32_t ext;
-	struct __attribute__((__packed__)) {
-#if defined(CSP_BIG_ENDIAN) && !defined(CSP_LITTLE_ENDIAN)
-		unsigned int pri : CSP_ID_PRIO_SIZE;
-		unsigned int src : CSP_ID_HOST_SIZE;
-		unsigned int dst : CSP_ID_HOST_SIZE;
-		unsigned int dport : CSP_ID_PORT_SIZE;
-		unsigned int sport : CSP_ID_PORT_SIZE;
-		unsigned int flags : CSP_ID_FLAGS_SIZE;
-#elif defined(CSP_LITTLE_ENDIAN) && !defined(CSP_BIG_ENDIAN)
-		unsigned int flags : CSP_ID_FLAGS_SIZE;
-		unsigned int sport : CSP_ID_PORT_SIZE;
-		unsigned int dport : CSP_ID_PORT_SIZE;
-		unsigned int dst : CSP_ID_HOST_SIZE;
-		unsigned int src : CSP_ID_HOST_SIZE;
-		unsigned int pri : CSP_ID_PRIO_SIZE;
-#else
-		#error "Must define one of CSP_BIG_ENDIAN or CSP_LITTLE_ENDIAN in csp_platform.h"
-#endif
-	};
+/**
+   CSP identifier/header.
+*/
+typedef struct {
+	uint8_t pri;
+	uint8_t flags;
+	uint16_t src;
+	uint16_t dst;
+	uint8_t dport;
+	uint8_t sport;
 } csp_id_t;
 
-/** Broadcast address */
-#define CSP_BROADCAST_ADDR		CSP_ID_HOST_MAX
+/**
+   @defgroup CSP_HEADER_FLAGS CSP header flags.
+   @{
+*/
+#define CSP_FRES1			0x80 //!< Reserved for future use
+#define CSP_FRES2			0x40 //!< Reserved for future use
+#define CSP_FRES3			0x20 //!< Reserved for future use
+#define CSP_FFRAG			0x10 //!< Use fragmentation
+#define CSP_FHMAC			0x08 //!< Use HMAC verification
+#define CSP_FXTEA			0x04 //!< Use XTEA encryption
+#define CSP_FRDP			0x02 //!< Use RDP protocol
+#define CSP_FCRC32			0x01 //!< Use CRC32 checksum
+/**@}*/
 
-/** Default routing address */
-#define CSP_DEFAULT_ROUTE		(CSP_ID_HOST_MAX + 1)
-
-/** CSP Flags */
-#define CSP_FRES1			0x80 // Reserved for future use
-#define CSP_FRES2			0x40 // Reserved for future use
-#define CSP_FRES3			0x20 // Reserved for future use
-#define CSP_FFRAG			0x10 // Use fragmentation
-#define CSP_FHMAC			0x08 // Use HMAC verification
-#define CSP_FXTEA			0x04 // Use XTEA encryption
-#define CSP_FRDP			0x02 // Use RDP protocol
-#define CSP_FCRC32			0x01 // Use CRC32 checksum
-
-/** CSP Socket options */
-#define CSP_SO_NONE					0x0000 // No socket options
-#define CSP_SO_RDPREQ				0x0001 // Require RDP
-#define CSP_SO_RDPPROHIB			0x0002 // Prohibit RDP
-#define CSP_SO_HMACREQ				0x0004 // Require HMAC
-#define CSP_SO_HMACPROHIB			0x0008 // Prohibit HMAC
-#define CSP_SO_XTEAREQ				0x0010 // Require XTEA
-#define CSP_SO_XTEAPROHIB			0x0020 // Prohibit HMAC
-#define CSP_SO_CRC32REQ				0x0040 // Require CRC32
-#define CSP_SO_CRC32PROHIB			0x0080 // Prohibit CRC32
-#define CSP_SO_CONN_LESS			0x0100 // Enable Connection Less mode
+/**
+   @defgroup CSP_SOCKET_OPTIONS CSP Socket options.
+   @{
+*/
+#define CSP_SO_NONE			0x0000 //!< No socket options
+#define CSP_SO_RDPREQ			0x0001 //!< Require RDP
+#define CSP_SO_RDPPROHIB		0x0002 //!< Prohibit RDP
+#define CSP_SO_HMACREQ			0x0004 //!< Require HMAC
+#define CSP_SO_HMACPROHIB		0x0008 //!< Prohibit HMAC
+#define CSP_SO_XTEAREQ			0x0010 //!< Require XTEA
+#define CSP_SO_XTEAPROHIB		0x0020 //!< Prohibit HMAC
+#define CSP_SO_CRC32REQ			0x0040 //!< Require CRC32
+#define CSP_SO_CRC32PROHIB		0x0080 //!< Prohibit CRC32
+#define CSP_SO_CONN_LESS		0x0100 //!< Enable Connection Less mode
+#define CSP_SO_INTERNAL_LISTEN          0x1000 //!< Internal flag: listen called on socket
 #define CSP_SO_CONN_LESS_CALLBACK 	0x0200 // Enable Callbacks directly in router task
-#define CSP_SO_SAME					0x8000 // Copy opts from incoming packet only apllies to csp_sendto_reply()
+#define CSP_SO_SAME			0x8000 // Copy opts from incoming packet only apllies to csp_sendto_reply()
+
+/**@}*/
 
 /** CSP Connect options */
-#define CSP_O_NONE				CSP_SO_NONE // No connection options
-#define CSP_O_RDP				CSP_SO_RDPREQ // Enable RDP
-#define CSP_O_NORDP				CSP_SO_RDPPROHIB // Disable RDP
-#define CSP_O_HMAC				CSP_SO_HMACREQ // Enable HMAC
-#define CSP_O_NOHMAC			CSP_SO_HMACPROHIB // Disable HMAC
-#define CSP_O_XTEA				CSP_SO_XTEAREQ // Enable XTEA
-#define CSP_O_NOXTEA			CSP_SO_XTEAPROHIB // Disable XTEA
-#define CSP_O_CRC32				CSP_SO_CRC32REQ // Enable CRC32
-#define CSP_O_NOCRC32			CSP_SO_CRC32PROHIB // Disable CRC32
-#define CSP_O_SAME				CSP_SO_SAME
+#define CSP_O_NONE			CSP_SO_NONE        //!< No connection options
+#define CSP_O_RDP			CSP_SO_RDPREQ      //!< Enable RDP
+#define CSP_O_NORDP			CSP_SO_RDPPROHIB   //!< Disable RDP
+#define CSP_O_HMAC			CSP_SO_HMACREQ     //!< Enable HMAC
+#define CSP_O_NOHMAC			CSP_SO_HMACPROHIB  //!< Disable HMAC
+#define CSP_O_XTEA			CSP_SO_XTEAREQ     //!< Enable XTEA
+#define CSP_O_NOXTEA			CSP_SO_XTEAPROHIB  //!< Disable XTEA
+#define CSP_O_CRC32			CSP_SO_CRC32REQ    //!< Enable CRC32
+#define CSP_O_NOCRC32			CSP_SO_CRC32PROHIB //!< Disable CRC32
+#define CSP_O_SAME			CSP_SO_SAME
 
+#ifndef CSP_PACKET_PADDING_BYTES
+#define CSP_PACKET_PADDING_BYTES 8
+#endif
+
+//doc-begin:csp_packet_t
 /**
- * CSP PACKET STRUCTURE
- * Note: This structure is constructed to fit
- * with all interface frame types in order to
- * have buffer reuse
- */
-#define CSP_PADDING_BYTES		8
-typedef struct __attribute__((__packed__)) {
-	uint8_t padding[CSP_PADDING_BYTES];	/**< Interface dependent padding */
-	uint16_t length;			/**< Length field must be just before CSP ID */
-	csp_id_t id;				/**< CSP id must be just before data */
+   CSP Packet.
+
+   This structure is constructed to fit with all interface and protocols to prevent the
+   need to copy data (zero copy).
+
+   @note In most cases a CSP packet cannot be reused in case of send failure, because the
+   lower layers may add additional data causing increased length (e.g. CRC32), convert
+   the CSP id to different endian (e.g. I2C), etc.
+*/
+typedef struct {
+	uint32_t rdp_quarantine;	// EACK quarantine period
+	uint32_t timestamp_tx;		// Time the message was sent
+	uint32_t timestamp_rx;		// Time the message was received
+
+	uint16_t length;			// Data length
+	csp_id_t id;				// CSP id (unpacked version CPU readable)
+
+	uint8_t * frame_begin;
+	uint16_t frame_length;
+
+	/* Additional header bytes, to prepend packed data before transmission
+	 * This must be minimum 6 bytes to accomodate CSP 2.0. But some implementations
+	 * require much more scratch working area for encryption for example.
+	 *
+	 * Ultimately after csp_id_pack() this area will be filled with the CSP header
+	 */
+
+	uint8_t header[CSP_PACKET_PADDING_BYTES];
+
+	/**
+	 * Data part of packet.
+	 * When using the csp_buffer API, the size of the data part is set by
+	 * csp_buffer_init(), and can later be accessed by csp_buffer_data_size()
+	 */
 	union {
-		uint8_t data[0];		/**< This just points to the rest of the buffer, without a size indication. */
-		uint16_t data16[0];		/**< The data 16 and 32 types makes it easy to reference an integer (properly aligned) */
-		uint32_t data32[0];		/**< without the compiler warning about strict aliasing rules. */
+		/** Access data as uint8_t. */
+		uint8_t data[0];
+		/** Access data as uint16_t */
+		uint16_t data16[0];
+		/** Access data as uint32_t */
+		uint32_t data32[0];
 	};
+
 } csp_packet_t;
-
-/** Interface TX function */
-struct csp_iface_s;
-typedef int (*nexthop_t)(struct csp_iface_s * interface, csp_packet_t *packet, uint32_t timeout);
-
-/** Interface struct */
-typedef struct csp_iface_s {
-	const char *name;			/**< Interface name (keep below 10 bytes) */
-	void * driver;				/**< Pointer to interface handler structure */
-	nexthop_t nexthop;			/**< Next hop function */
-	uint16_t mtu;				/**< Maximum Transmission Unit of interface */
-	uint8_t split_horizon_off;	/**< Disable the route-loop prevention on if */
-	uint32_t tx;				/**< Successfully transmitted packets */
-	uint32_t rx;				/**< Successfully received packets */
-	uint32_t tx_error;			/**< Transmit errors */
-	uint32_t rx_error;			/**< Receive errors */
-	uint32_t drop;				/**< Dropped packets */
-	uint32_t autherr; 			/**< Authentication errors */
-	uint32_t frame;				/**< Frame format errors */
-	uint32_t txbytes;			/**< Transmitted bytes */
-	uint32_t rxbytes;			/**< Received bytes */
-	uint32_t irq;				/**< Interrupts */
-	struct csp_iface_s *next;	/**< Next interface */
-} csp_iface_t;
+//doc-end:csp_packet_t
 
 /**
- * This define must be equal to the size of the packet overhead in csp_packet_t.
- * It is used in csp_buffer_get() to check the allocated buffer size against
- * the required buffer size.
- */
-#define CSP_BUFFER_PACKET_OVERHEAD 	(sizeof(csp_packet_t) - sizeof(((csp_packet_t *)0)->data))
+   Size of the packet overhead in #csp_packet_t.
+   The overhead is the difference between the total buffer size (returned by csp_buffer_size()) and the data part
+   of the #csp_packet_t (returned by csp_buffer_data_size()).
+*/
+#define CSP_BUFFER_PACKET_OVERHEAD      (sizeof(csp_packet_t) - sizeof(((csp_packet_t *)0)->data))
 
-/** Forward declaration of socket and connection structures */
+/** Forward declaration of CSP interface, see #csp_iface_s for details. */
+typedef struct csp_iface_s csp_iface_t;
+/** Forward declaration of outgoing CSP route, see #csp_route_s for details. */
+typedef struct csp_route_s csp_route_t;
+
+/** Forward declaration of socket structure */
 typedef struct csp_conn_s csp_socket_t;
+/** Forward declaration of connection structure */
 typedef struct csp_conn_s csp_conn_t;
 
+/** Max length of host name - including zero termination */
 #define CSP_HOSTNAME_LEN	20
+/** Max length of model name - including zero termination */
 #define CSP_MODEL_LEN		30
 
-/* CSP_REBOOT magic values */
+/** Magic number for reboot request, for service-code #CSP_REBOOT */
 #define CSP_REBOOT_MAGIC		0x80078007
+/** Magic number for shutdown request, for service-code #CSP_REBOOT */
 #define CSP_REBOOT_SHUTDOWN_MAGIC	0xD1E5529A
 
+#ifdef __AVR__
+typedef uint32_t csp_memptr_t;
+typedef const uint32_t csp_const_memptr_t;
+#else
+/** Memory pointer */
+typedef void * csp_memptr_t;
+/** Const memory pointer */
+typedef const void * csp_const_memptr_t;
+#endif
+
+/**
+   Platform specific memory copy function.
+*/
+typedef csp_memptr_t (*csp_memcpy_fnc_t)(csp_memptr_t, csp_const_memptr_t, size_t);
+
+/**
+   Compile check/asserts.
+*/
+#define CSP_STATIC_ASSERT(condition, name)   typedef char name[(condition) ? 1 : -1]
+    
+#ifdef __cplusplus
+}
+#endif
 #endif /* CSP_TYPES_H_ */
