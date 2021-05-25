@@ -396,7 +396,7 @@ int csp_sendto(uint8_t prio, uint16_t dest, uint8_t dport, uint8_t src_port, uin
 	packet->id.pri = prio;
 
 	if (csp_send_direct(packet->id, packet, csp_rtable_find_route(dest), timeout) != CSP_ERR_NONE)
-		return CSP_ERR_NOTSUP;
+		return CSP_ERR_TX;
 	
 	return CSP_ERR_NONE;
 
