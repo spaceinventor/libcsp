@@ -50,6 +50,20 @@ static inline int init_cond_clock_monotonic(pthread_cond_t * cond) {
 	return ret;
 }
 
+pthread_queue_t *pthread_queue_create_static(int length, size_t item_size, char * buffer, csp_static_queue_t * queue) {
+	pthread_queue_t *res = (pthread_queue_t*)queue;
+	res->buffer = buffer;
+	res->size = length;
+	res->item_size = item_size;
+	res->items = 0;
+	res->in = 0;
+	res->out = 0;
+	if (pthread_mutex_init(&(res->mutex), NULL) || init_cond_clock_monotonic(&(res->cond_full)) || init_cond_clock_monotonic(&(res->cond_empty))) {
+		res = NULL;
+	}
+	return res;
+}
+
 pthread_queue_t * pthread_queue_create(int length, size_t item_size) {
 
 	pthread_queue_t * q = malloc(sizeof(pthread_queue_t));

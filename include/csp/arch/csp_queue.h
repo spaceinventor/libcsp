@@ -29,7 +29,7 @@ typedef StaticQueue_t csp_static_queue_t;
 #include <zephyr/kernel.h>
 typedef struct k_msgq csp_static_queue_t;
 #else
-typedef void * csp_static_queue_t;
+typedef uint8_t csp_static_queue_t[256];
 #endif
 
 csp_queue_handle_t csp_queue_create_static(int length, size_t item_size, char * buffer, csp_static_queue_t * queue);

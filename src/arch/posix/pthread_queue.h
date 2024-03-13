@@ -65,6 +65,9 @@ typedef struct pthread_queue_s {
 */
 pthread_queue_t * pthread_queue_create(int length, size_t item_size);
 
+
+pthread_queue_t *pthread_queue_create_static(int length, size_t item_size, char * buffer, csp_static_queue_t * queue);
+
 /**
    Delete queue.
 */
