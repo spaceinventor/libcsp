@@ -295,7 +295,6 @@ int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t 
 			return CSP_ERR_INVAL;
 		}
 
-		iface->frame++;
 		csp_id2_setup_rx(packet);
 
 		/* Copy first 2 bytes from CFP 2.0 header:
