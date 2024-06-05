@@ -64,12 +64,13 @@ csp_c_args = ['-Wshadow',
 	      '-Wwrite-strings',
 	      '-Wno-unused-parameter']
 
+csp_lib_includes = ['include', 'src']
 subdir('src')
 subdir('include/csp')
 
 csp_lib = library('csp',
 	sources: [csp_sources, csp_config_h],
-	include_directories : include_directories('include', 'src'),
+	include_directories : csp_lib_includes,
 	dependencies : csp_deps,
 	c_args : csp_c_args,
 	install : do_install,
