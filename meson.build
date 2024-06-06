@@ -26,7 +26,6 @@ conf.set10('CSP_ENABLE_CSP_PRINT', get_option('enable_csp_print'))
 conf.set10('CSP_PRINT_STDIO', get_option('print_stdio'))
 conf.set10('CSP_USE_RTABLE', get_option('use_rtable'))
 
-do_install = not meson.is_subproject()
 csp_deps = []
 csp_sources = []
 
@@ -73,7 +72,7 @@ csp_lib = both_libraries('csp',
 	include_directories : csp_lib_includes,
 	dependencies : csp_deps,
 	c_args : csp_c_args,
-	install : do_install,
+	install : true,
 	pic:true,
 )
 
@@ -101,12 +100,10 @@ if get_option('enable_python3_bindings')
 	py.extension_module('libcsp_py3', 'src/bindings/python/pycsp.c',
                     	c_args : csp_c_args,
                     	dependencies : [csp_dep, pydep],
-                    	install : do_install)
+                    	install : true)
 endif
 
-if do_install
-	install_subdir('include', install_dir : '.', exclude_files: ['csp/meson.build'])
-	install_headers(csp_config_h, install_dir : 'include/csp')
-	pkg = import('pkgconfig')
-	pkg.generate(csp_lib)
-endif
+install_subdir('include', install_dir : '.', exclude_files: ['csp/meson.build'])
+install_headers(csp_config_h, install_dir : 'include/csp')
+pkg = import('pkgconfig')
+pkg.generate(csp_lib)
