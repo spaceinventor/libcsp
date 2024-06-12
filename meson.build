@@ -67,7 +67,7 @@ csp_lib_includes = ['include', 'src']
 subdir('src')
 subdir('include/csp')
 
-csp_lib = both_libraries('csp',
+csp_lib = library('csp',
 	sources: [csp_sources, csp_config_h],
 	include_directories : csp_lib_includes,
 	dependencies : csp_deps,
@@ -80,12 +80,8 @@ csp_lib = both_libraries('csp',
 # against libcsp. https://mesonbuild.com/Subprojects.html
 csp_dep = declare_dependency(
 	include_directories : csp_inc,
-	link_with : csp_lib.get_static_lib(),
+	link_with : csp_lib,
 	dependencies : csp_deps,
-)
-csp_shared_dep = declare_dependency(
-	include_directories : csp_inc,
-	link_with : csp_lib.get_shared_lib(),
 )
 
 subdir('examples')
