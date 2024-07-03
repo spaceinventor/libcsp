@@ -144,6 +144,10 @@ static int do_cmp_peek_v2(struct csp_cmp_message * cmp) {
 	if (cmp->peek_v2.len > CSP_CMP_PEEK_MAX_LEN)
 		return CSP_ERR_INVAL;
 
+	if (!csp_cmp_memread64_fnc) {
+		return CSP_ERR_DRIVER;
+	}
+
 	/* Dangerous, you better know what you are doing */
 	csp_cmp_memread64_fnc(cmp->peek_v2.data, cmp->peek_v2.vaddr, cmp->peek_v2.len);
 
@@ -155,6 +159,10 @@ static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 	cmp->poke_v2.vaddr = htobe64(cmp->poke_v2.vaddr);
 	if (cmp->poke_v2.len > CSP_CMP_POKE_MAX_LEN)
 		return CSP_ERR_INVAL;
+
+	if (!csp_cmp_memwrite64_fnc) {
+		return CSP_ERR_DRIVER;
+	}
 
 	/* Extremely dangerous, you better know what you are doing */
 	csp_cmp_memwrite64_fnc(cmp->poke_v2.vaddr, cmp->poke_v2.data, cmp->poke_v2.len);
