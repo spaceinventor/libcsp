@@ -22,12 +22,20 @@ static uint32_t wrap_32bit_memcpy(uint32_t to, const uint32_t from, size_t size)
 static csp_memcpy_fnc_t csp_cmp_memcpy_fnc = wrap_32bit_memcpy;
 #else
 static csp_memcpy_fnc_t csp_cmp_memcpy_fnc = (csp_memcpy_fnc_t)memcpy;
-static csp_memcpy64_fnc_t csp_cmp_memcpy64_fnc = (csp_memcpy64_fnc_t)NULL;
+static csp_memread64_fnc_t csp_cmp_memread64_fnc = (csp_memread64_fnc_t)NULL;
+static csp_memwrite64_fnc_t csp_cmp_memwrite64_fnc = (csp_memwrite64_fnc_t)NULL;
 #endif
 
 void csp_cmp_set_memcpy(csp_memcpy_fnc_t fnc) {
 	csp_cmp_memcpy_fnc = fnc;
-	csp_cmp_memcpy64_fnc = (csp_memcpy64_fnc_t)(void *)fnc;
+}
+
+void csp_cmp_set_memread64(csp_memread64_fnc_t fnc) {
+	csp_cmp_memread64_fnc = fnc;
+}
+
+void csp_cmp_set_memwrite64(csp_memwrite64_fnc_t fnc) {
+	csp_cmp_memwrite64_fnc = fnc;
 }
 
 static int do_cmp_ident(struct csp_cmp_message * cmp) {
@@ -137,7 +145,7 @@ static int do_cmp_peek_v2(struct csp_cmp_message * cmp) {
 		return CSP_ERR_INVAL;
 
 	/* Dangerous, you better know what you are doing */
-	csp_cmp_memcpy64_fnc((csp_memptr64_t)(uintptr_t)cmp->peek_v2.data, cmp->peek_v2.vaddr, cmp->peek_v2.len);
+	csp_cmp_memread64_fnc(cmp->peek_v2.data, cmp->peek_v2.vaddr, cmp->peek_v2.len);
 
 	return CSP_ERR_NONE;
 }
@@ -149,7 +157,7 @@ static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 		return CSP_ERR_INVAL;
 
 	/* Extremely dangerous, you better know what you are doing */
-	csp_cmp_memcpy64_fnc(cmp->poke_v2.vaddr, (csp_memptr64_t)(uintptr_t)cmp->poke_v2.data, cmp->poke_v2.len);
+	csp_cmp_memwrite64_fnc(cmp->poke_v2.vaddr, cmp->poke_v2.data, cmp->poke_v2.len);
 
 	return CSP_ERR_NONE;
 }

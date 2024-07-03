@@ -161,12 +161,12 @@ struct csp_cmp_message {
 			char data[CSP_CMP_POKE_MAX_LEN];
 		} poke;
 		struct {
-			uint64_t vaddr;
+			uint64_t vaddr; /* Virtual 64-bit address on the target system */
 			uint8_t len;
 			char data[CSP_CMP_PEEK_V2_MAX_LEN];
 		} peek_v2;
 		struct {
-			uint64_t vaddr;
+			uint64_t vaddr; /* Virtual 64-bit address on the target system */
 			uint8_t len;
 			char data[CSP_CMP_POKE_V2_MAX_LEN];
 		} poke_v2;
