@@ -157,7 +157,7 @@ int csp_iflist_add(csp_iface_t * ifc) {
 	ifc->next = NULL;
 
 	/* Check for invalid config, allow using node 0 for loopback interface */
-	if (ifc->name != CSP_IF_LOOPBACK_NAME && ifc->addr == 0 || ifc->addr > csp_id_get_max_nodeid()) {
+	if ((ifc->name != CSP_IF_LOOPBACK_NAME && ifc->addr == 0) || ifc->addr > csp_id_get_max_nodeid()) {
 		ifc->addr = 1;
 	}
 	if (ifc->netmask > csp_id_get_host_bits()) {
