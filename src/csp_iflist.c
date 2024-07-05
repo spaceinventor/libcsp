@@ -154,10 +154,16 @@ csp_iface_t * csp_iflist_get_by_index(int idx) {
 
 int csp_iflist_add(csp_iface_t * ifc) {
 
+	/* Check if CSP is initialized, by allowing only loopback to be registered as initial interface */
+	extern csp_iface_t csp_if_lo;
+	if (interfaces == NULL && ifc != &csp_if_lo) {
+		return CSP_ERR_NOTSUP;
+	}
+
 	ifc->next = NULL;
 
 	/* Check for invalid config, allow using node 0 for loopback interface */
-	if ((ifc->name != CSP_IF_LOOPBACK_NAME && ifc->addr == 0) || ifc->addr > csp_id_get_max_nodeid()) {
+	if ((interfaces != NULL && ifc->addr == 0) || ifc->addr > csp_id_get_max_nodeid()) {
 		ifc->addr = 1;
 	}
 	if (ifc->netmask > csp_id_get_host_bits()) {
