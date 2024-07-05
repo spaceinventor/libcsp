@@ -156,6 +156,15 @@ int csp_iflist_add(csp_iface_t * ifc) {
 
 	ifc->next = NULL;
 
+	/* Check for invalid config */
+	if (ifc->addr == 0 || ifc->addr > csp_id_get_max_nodeid()) {
+		ifc->addr = 1;
+	}
+	if (ifc->netmask > csp_id_get_host_bits()) {
+		ifc->netmask = 0;
+	}
+	if (ifc->is_default > 1) ifc->is_default = 1;
+
 	/* Add interface to pool */
 	if (interfaces == NULL) {
 		/* This is the first interface to be added */
