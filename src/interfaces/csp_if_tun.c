@@ -108,13 +108,13 @@ static int csp_if_tun_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
 
 }
 
-void csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf) {
+int csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf) {
 
 	iface->driver_data = ifconf;
 
 	/* Regsiter interface */
-	iface->name = "TUN",
-	iface->nexthop = csp_if_tun_tx,
-	csp_iflist_add(iface);
+	iface->name = "TUN";
+	iface->nexthop = csp_if_tun_tx;
+	return csp_iflist_add(iface);
 
 }

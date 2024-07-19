@@ -165,10 +165,11 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
      */
 
     /* Register interface */
-    csp_iflist_add(&ctx->ifdata.iface);
+    int ret = csp_iflist_add(&ctx->ifdata.iface);
 
 	if (return_iface) {
 		*return_iface = &ctx->ifdata.iface;
 	}
 
-    return CSP_ERR_NONE;}
+    return ret;
+}
