@@ -226,7 +226,7 @@ csp_iface_t * csp_driver_can_init(int addr, int netmask, int id, can_mode_e mode
 	mcan[id].interface.addr = addr;
 	mcan[id].interface.netmask = netmask;
 
-	/* Regsiter interface */
+	/* Register interface */
 	csp_can_add_interface(&mcan[id].interface);
 
 #if CAN_DEFER_TASK
