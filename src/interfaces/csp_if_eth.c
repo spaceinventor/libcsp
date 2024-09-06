@@ -132,7 +132,6 @@ void csp_eth_arp_get_addr(uint8_t * mac_addr, uint16_t csp_addr)
 int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken) {
 
 	csp_eth_interface_data_t * ifdata = iface->interface_data;
-    csp_packet_t * pbuf_list = ifdata->pbufs;
 
     if (eth_debug) csp_hex_dump("rx", (void*)eth_frame, received_len);
 
@@ -178,27 +177,30 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    /* Add packet segment */
-    csp_packet_t * packet = csp_if_eth_pbuf_get(&pbuf_list, packet_id, task_woken);
+    csp_packet_t * packet = csp_eth_pbuf_find(ifdata, packet_id, task_woken);
 
     if (packet == NULL) {
         iface->drop++;
         csp_print("eth rx cannot get csp packet\n");
         return CSP_ERR_INVAL;
     }
+
     if (packet->frame_length == 0) {
         /* First segment */
+        csp_id_setup_rx(packet);
         packet->frame_length = frame_length;
         packet->rx_count = 0;
     }
 
     if (frame_length != packet->frame_length) {
+        csp_eth_pbuf_free(ifdata, packet, true, task_woken);
         iface->frame++;
         csp_print("eth rx inconsistent frame_length\n");
         return CSP_ERR_INVAL;
     }
 
     if (packet->rx_count + seg_size > packet->frame_length) {
+        csp_eth_pbuf_free(ifdata, packet, true, task_woken);
         iface->frame++;
         csp_print("eth rx data received exceeds frame_length\n");
         return CSP_ERR_INVAL;
@@ -208,12 +210,11 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
     packet->rx_count += seg_size;
 
     /* Send packet when fully received */
-
     if (packet->rx_count < packet->frame_length) {
         return CSP_ERR_NONE;
     }
 
-    csp_if_eth_pbuf_remove(&pbuf_list, packet);
+    csp_eth_pbuf_free(ifdata, packet, false, task_woken);
 
     if (csp_id_strip(packet) != 0) {
         csp_print("eth rx packet discarded due to error in ID field\n");
@@ -226,16 +227,12 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
     csp_eth_arp_set_addr(eth_frame->ether_shost, packet->id.src);
 
     if (packet->id.dst != iface->addr && !ifdata->promisc) {
+        csp_eth_pbuf_free(ifdata, packet, true, task_woken);
         (task_woken) ? csp_buffer_free_isr(packet) : csp_buffer_free(packet);
         return CSP_ERR_NONE;
     }
 
     csp_qfifo_write(packet, iface, task_woken);
-
-    if (eth_debug) csp_if_eth_pbuf_list_print(&pbuf_list);
-
-    /* Remove potentially stalled partial packets */
-    csp_if_eth_pbuf_list_cleanup(&pbuf_list);
 
     return CSP_ERR_NONE;
 }
