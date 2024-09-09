@@ -43,6 +43,6 @@ typedef struct {
 } csp_eth_pbuf_element_t;
 
 void csp_eth_pbuf_free(csp_eth_interface_data_t * ifdata, csp_packet_t * buffer, int buf_free, int * task_woken);
-csp_packet_t * csp_eth_pbuf_new(csp_eth_interface_data_t * ifdata, uint32_t id, int * task_woken);
+csp_packet_t * csp_eth_pbuf_new(csp_eth_interface_data_t * ifdata, uint32_t id, uint32_t now, int * task_woken);
 csp_packet_t * csp_eth_pbuf_find(csp_eth_interface_data_t * ifdata, uint32_t id, int * task_woken);
-void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, int * task_woken);
+void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, uint32_t now, int * task_woken);
