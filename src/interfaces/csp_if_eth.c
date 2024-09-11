@@ -247,26 +247,25 @@ int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fro
         return CSP_ERR_NONE;
     }
 
-    static uint16_t packet_id = 0;
-    csp_eth_header_t *eth_frame = ifdata->tx_buf;
-
-    csp_eth_arp_get_addr(eth_frame->ether_dhost, packet->id.dst);
-
-    eth_frame->ether_type = htobe16(CSP_ETH_TYPE_CSP);
-    memcpy(eth_frame->ether_shost, ifdata->if_mac, CSP_ETH_ALEN);
-
     csp_id_prepend(packet);
 
+    static uint16_t packet_id = 0;
     packet_id++;
-
     uint16_t offset = 0;
-    const uint16_t seg_size_max = ifdata->tx_mtu - sizeof(csp_eth_header_t);
 
     while (offset < packet->frame_length) {
+
+        csp_eth_header_t *eth_frame = ifdata->tx_buf;
+
+        const uint16_t seg_size_max = ifdata->tx_mtu - sizeof(csp_eth_header_t);
         uint16_t seg_size = packet->frame_length - offset;
         if (seg_size > seg_size_max) {
             seg_size = seg_size_max;
         }
+
+        eth_frame->ether_type = htobe16(CSP_ETH_TYPE_CSP);
+        csp_eth_arp_get_addr(eth_frame->ether_dhost, packet->id.dst);
+        memcpy(eth_frame->ether_shost, ifdata->if_mac, CSP_ETH_ALEN);
 
         csp_eth_pack_header(eth_frame, packet_id, packet->id.src, seg_size, packet->frame_length);
 
