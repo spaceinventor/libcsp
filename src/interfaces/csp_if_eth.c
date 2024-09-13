@@ -164,7 +164,7 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    if (sizeof(csp_eth_header_t) + seg_size > received_len) {
+    if ((sizeof(csp_eth_header_t) + seg_size) > received_len) {
         iface->frame++;
         csp_print("eth rx sizeof(csp_eth_frame_t) + seg_size(%u) > received(%u)\n",
             (unsigned)seg_size, (unsigned)received_len);
@@ -199,7 +199,7 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    if (packet->rx_count + seg_size > packet->frame_length) {
+    if ((packet->rx_count + seg_size) > packet->frame_length) {
         csp_eth_pbuf_free(ifdata, packet, true, task_woken);
         iface->frame++;
         csp_print("eth rx data received exceeds frame_length\n");

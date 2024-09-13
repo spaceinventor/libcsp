@@ -69,7 +69,7 @@ void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, uint32_t now, int *
 	while (packet) {
 
 		/* Perform cleanup in used pbufs */
-		if (now - packet->last_used > PBUF_TIMEOUT_MS) {
+		if ((now - packet->last_used) > PBUF_TIMEOUT_MS) {
 
 			/* Erase from list prev->next = next */
 			if (prev) {
