@@ -152,9 +152,9 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
     uint16_t frame_length = 0;
     csp_if_eth_unpack_header(eth_frame, &packet_id, &seg_size, &frame_length);
 
-    if (seg_size == 0) {
+    if (seg_size == 0 || seg_size > CSP_ETH_FRAME_SIZE_MAX) {
         iface->frame++;
-        csp_print("eth rx seg_size is zero\n");
+        csp_print("eth rx seg_size of %u bytes is invalid\n");
         return CSP_ERR_INVAL;
     }
 
@@ -171,9 +171,9 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    if (frame_length == 0) {
+    if (frame_length == 0 || frame_length > CSP_BUFFER_SIZE) {
         iface->frame++;
-        csp_print("eth rx frame_length is zero\n");
+        csp_print("eth rx frame_length of %u is invalid\n", frame_length);
         return CSP_ERR_INVAL;
     }
 
