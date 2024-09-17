@@ -833,10 +833,10 @@ int csp_rdp_send(csp_conn_t * conn, csp_packet_t * packet) {
 	csp_rdp_queue_tx_add(conn, rdp_packet);
 
 	csp_rdp_protocol(
-		"RDP %p: Sending  in S %u: syn %u, ack %u, "
+		"RDP %p: Sending in S %u: syn %u, ack %u, "
 		"rst %u, seq_nr %5u, ack_nr %5u, packet_len %u (%u)\n",
-		conn, conn->rdp.state, (tx_header->flags & RDP_SYN), (tx_header->flags & RDP_ACK),
-		(tx_header->flags & RDP_RST), be16toh(tx_header->seq_nr), be16toh(tx_header->ack_nr),
+		conn, conn->rdp.state, ((tx_header->flags & RDP_SYN) != 0), ((tx_header->flags & RDP_ACK) != 0),
+		((tx_header->flags & RDP_RST) != 0), be16toh(tx_header->seq_nr), be16toh(tx_header->ack_nr),
 		packet->length, (unsigned int)(packet->length - sizeof(rdp_header_t)));
 
 	conn->rdp.snd_nxt++;
