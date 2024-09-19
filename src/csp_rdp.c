@@ -451,7 +451,7 @@ bool csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 		}
 
 		if (conn->rdp.state == RDP_CLOSE_WAIT) {
-			csp_rdp_protocol("RDP %p: RST received in CLOSE_WAIT, ack: %d - closing\n", conn, (rx_header->flags & RDP_ACK));
+			csp_rdp_protocol("RDP %p: RST received in CLOSE_WAIT, ack: %d - closing\n", conn, ((rx_header->flags & RDP_ACK) != 0));
 			if ((rx_header->flags & RDP_ACK) && CSP_USE_RDP_FAST_CLOSE) {
 				// skip timeout - the other end has acknowledged the RST
 				closed_by |= CSP_RDP_CLOSED_BY_TIMEOUT;
