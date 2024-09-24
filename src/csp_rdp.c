@@ -122,13 +122,14 @@ static int csp_rdp_send_cmp(csp_conn_t * conn, csp_packet_t * packet, int flags,
 			return CSP_ERR_NOMEM;
 		packet->length = 0;
 	}
-
-	/* Update last ACK time stamp 
-	 * We do this early to minimize race condition between read() call and router task csp_rdp_new_packet() */
+ 
 	if (flags & RDP_ACK) {
 		conn->rdp.rcv_lsa = ack_nr;
-		conn->rdp.ack_timestamp = csp_get_ms();
 	}
+
+	/* Every outgoing message contains the last valid ACK number. So we always set last ack timetamp
+	 * We do this early to minimize race condition between read() call and router task csp_rdp_new_packet() */
+	conn->rdp.ack_timestamp = csp_get_ms();
 
 	/* Add RDP header */
 	rdp_header_t * header = csp_rdp_header_add(packet);
@@ -356,8 +357,8 @@ void csp_rdp_check_timeouts(csp_conn_t * conn) {
 	if (conn->rdp.state == RDP_CLOSE_WAIT) {
 		if (csp_rdp_time_after(time_now, conn->timestamp + conn->rdp.conn_timeout)) {
 			csp_conn_close(conn, CSP_RDP_CLOSED_BY_PROTOCOL | CSP_RDP_CLOSED_BY_TIMEOUT);
+			return;
 		}
-		return;
 	}
 
 	/**
@@ -389,6 +390,9 @@ void csp_rdp_check_timeouts(csp_conn_t * conn) {
 
 			/* Update to latest outgoing ACK */
 			header->ack_nr = htobe16(conn->rdp.rcv_cur);
+
+			/* Every outgoing message contains the last valid ACK number. So we always set last ack timetamp */
+			conn->rdp.ack_timestamp = csp_get_ms();
 
 			/* Send copy to tx_queue */
 			packet->timestamp_tx = csp_get_ms();
@@ -452,7 +456,7 @@ bool csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 		}
 
 		if (conn->rdp.state == RDP_CLOSE_WAIT) {
-			csp_rdp_protocol("RDP %p: RST received in CLOSE_WAIT, ack: %d - closing\n", conn, (rx_header->flags & RDP_ACK));
+			csp_rdp_protocol("RDP %p: RST received in CLOSE_WAIT, ack: %d - closing\n", conn, ((rx_header->flags & RDP_ACK) != 0));
 			if ((rx_header->flags & RDP_ACK) && CSP_USE_RDP_FAST_CLOSE) {
 				// skip timeout - the other end has acknowledged the RST
 				closed_by |= CSP_RDP_CLOSED_BY_TIMEOUT;
@@ -841,6 +845,7 @@ int csp_rdp_send(csp_conn_t * conn, csp_packet_t * packet) {
 		packet->length, (unsigned int)(packet->length - sizeof(rdp_header_t)));
 
 	conn->rdp.snd_nxt++;
+	conn->rdp.ack_timestamp = csp_get_ms();
 	return CSP_ERR_NONE;
 }
 
