@@ -228,7 +228,6 @@ front:
 		}
 
 		rdp_header_t * header = csp_rdp_header_ref(packet);
-		csp_rdp_protocol("RDP %p: RX Queue deliver matching Element, seq %u\n", conn, header->seq_nr);
 
 		/* If the matching packet was found: */
 		if (header->seq_nr == (uint16_t)(conn->rdp.rcv_cur + 1)) {
@@ -265,11 +264,7 @@ static inline bool csp_rdp_seq_in_rx_queue(csp_conn_t * conn, uint16_t seq_nr) {
 		csp_rdp_queue_rx_add(conn, packet);
 
 		rdp_header_t * header = csp_rdp_header_ref((csp_packet_t *)packet);
-		csp_rdp_protocol("RDP %p: RX Queue exists matching Element, seq %u\n", conn, header->seq_nr);
-
-		/* If the matching packet was found, deliver */
 		if (header->seq_nr == seq_nr) {
-			csp_rdp_protocol("RDP %p: We have a match\n", conn);
 			return true;
 		}
 	}
@@ -279,8 +274,11 @@ static inline bool csp_rdp_seq_in_rx_queue(csp_conn_t * conn, uint16_t seq_nr) {
 
 static inline int csp_rdp_rx_queue_add(csp_conn_t * conn, csp_packet_t * packet, uint16_t seq_nr) {
 
-	if (csp_rdp_seq_in_rx_queue(conn, seq_nr))
+	if (csp_rdp_seq_in_rx_queue(conn, seq_nr)) {
+		csp_rdp_protocol("RDP %p: Already exists in RX queue %u\n", conn, seq_nr);
 		return -1;
+	}
+	csp_rdp_protocol("RDP %p: Add to RX queue %u\n", conn, seq_nr);
 	csp_rdp_queue_rx_add(conn, packet);
 	return 0;
 }
@@ -596,7 +594,7 @@ bool csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 
 			/* Check sequence number */
 			if (!csp_rdp_seq_between(rx_header->seq_nr, conn->rdp.rcv_cur + 1, conn->rdp.rcv_cur + (conn->rdp.window_size * 2))) {
-				csp_rdp_protocol("RDP %p: Invalid sequence number! %u not between %u and %" PRIu32"\n",
+				csp_rdp_protocol("RDP %p: Out of range %u, expect %u to %" PRIu32"\n",
 								 conn, rx_header->seq_nr, conn->rdp.rcv_cur + 1U, conn->rdp.rcv_cur + (conn->rdp.window_size * 2U));
 				/* If duplicate SYN received, send another SYN/ACK */
 				if (conn->rdp.state == RDP_SYN_RCVD)
@@ -659,7 +657,6 @@ bool csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 			/* If message is not in sequence, store packet */
 			if (rx_header->seq_nr != (uint16_t)(conn->rdp.rcv_cur + 1)) {
 				if (csp_rdp_rx_queue_add(conn, packet, rx_header->seq_nr) != 0) {
-					csp_rdp_protocol("RDP %p: Duplicate sequence number\n", conn);
 					csp_rdp_check_ack(conn);
 					goto discard_open;
 				}
@@ -803,17 +800,16 @@ int csp_rdp_send(csp_conn_t * conn, csp_packet_t * packet) {
 		return CSP_ERR_RESET;
 	}
 
-	while ((conn->rdp.state == RDP_OPEN) && (csp_rdp_is_conn_ready_for_tx(conn) == false)) {
-		csp_rdp_protocol("RDP %p: Waiting for window update before sending seq %u\n", conn, conn->rdp.snd_nxt);
-		if ((csp_bin_sem_wait(&conn->rdp.tx_wait, conn->rdp.conn_timeout)) != CSP_SEMAPHORE_OK) {
-			csp_rdp_error("RDP %p: Timeout during send\n", conn);
-			return CSP_ERR_TIMEDOUT;
+	/* Wait here for RDP to become ready or the connection to be closed */
+	while (1) {
+		if (conn->rdp.state == RDP_CLOSE_WAIT || conn->rdp.state == RDP_CLOSED) {
+			csp_rdp_error("RDP %p: ERROR cannot send, connection closed by peer or timeout\n", conn);
+			return CSP_ERR_RESET;
 		}
-	}
-
-	if (conn->rdp.state != RDP_OPEN) {
-		csp_rdp_error("RDP %p: ERROR cannot send, connection not open (%d) -> reset\n", conn, conn->rdp.state);
-		return CSP_ERR_RESET;
+		if (csp_rdp_is_conn_ready_for_tx(conn) == true)
+			break;
+		csp_rdp_protocol("RDP %p: Waiting for window update before sending seq %u\n", conn, conn->rdp.snd_nxt);
+		csp_bin_sem_wait(&conn->rdp.tx_wait, conn->rdp.conn_timeout);
 	}
 
 	/* Add RDP header */
