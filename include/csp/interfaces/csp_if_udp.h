@@ -39,7 +39,7 @@ typedef struct {
  * TX peer:
  *   Outgoing CSP packets will be transferred to the peer specified by the host argument
  */
-void csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf);
+int csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf);
 
 #ifdef __cplusplus
 }

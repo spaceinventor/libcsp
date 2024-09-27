@@ -17,7 +17,7 @@ typedef struct {
 	int tun_dst;
 } csp_if_tun_conf_t;
 
-void csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf);
+int csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf);
 
 #ifdef __cplusplus
 }

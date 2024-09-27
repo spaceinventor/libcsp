@@ -101,7 +101,7 @@ void * csp_if_udp_rx_loop(void * param) {
 	return NULL;
 }
 
-void csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf) {
+int csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf) {
 
 	pthread_attr_t attributes;
 	int ret;
@@ -126,7 +126,7 @@ void csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf) {
 	ret = pthread_create(&ifconf->server_handle, &attributes, csp_if_udp_rx_loop, iface);
 
 	/* Regsiter interface */
-	iface->name = "UDP",
-	iface->nexthop = csp_if_udp_tx,
-	csp_iflist_add(iface);
+	iface->name = "UDP";
+	iface->nexthop = csp_if_udp_tx;
+	return csp_iflist_add(iface);
 }
