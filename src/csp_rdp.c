@@ -121,7 +121,7 @@ static int csp_rdp_send_cmp(csp_conn_t * conn, csp_packet_t * packet, int flags,
 			return CSP_ERR_NOMEM;
 		packet->length = 0;
 	}
- 
+
 	if (flags & RDP_ACK) {
 		conn->rdp.rcv_lsa = ack_nr;
 	}
@@ -837,7 +837,6 @@ int csp_rdp_send(csp_conn_t * conn, csp_packet_t * packet) {
 	}
 
 	rdp_packet->timestamp_tx = csp_get_ms();
-	rdp_packet->rdp_quarantine = 0;
 	csp_rdp_queue_tx_add(conn, rdp_packet);
 
 	csp_rdp_protocol(
@@ -962,4 +961,3 @@ bool csp_rdp_conn_is_active(csp_conn_t *conn) {
 	return active;
 
 }
-
