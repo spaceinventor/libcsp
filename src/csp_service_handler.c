@@ -143,7 +143,7 @@ static int do_cmp_poke(struct csp_cmp_message * cmp) {
 static int do_cmp_peek_v2(struct csp_cmp_message * cmp) {
 
 	cmp->peek_v2.vaddr = htobe64(cmp->peek_v2.vaddr);
-	if (cmp->peek_v2.len > CSP_CMP_PEEK_MAX_LEN)
+	if (cmp->peek_v2.len > CSP_CMP_PEEK_V2_MAX_LEN)
 		return CSP_ERR_INVAL;
 
 	if (!csp_cmp_memread64_fnc) {
@@ -159,7 +159,7 @@ static int do_cmp_peek_v2(struct csp_cmp_message * cmp) {
 static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 
 	cmp->poke_v2.vaddr = htobe64(cmp->poke_v2.vaddr);
-	if (cmp->poke_v2.len > CSP_CMP_POKE_MAX_LEN)
+	if (cmp->poke_v2.len > CSP_CMP_POKE_V2_MAX_LEN)
 		return CSP_ERR_INVAL;
 
 	if (!csp_cmp_memwrite64_fnc) {
