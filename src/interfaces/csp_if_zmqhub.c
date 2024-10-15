@@ -2,6 +2,11 @@
 
 #if (CSP_HAVE_LIBZMQ)
 
+/* csp_zmqhub_init_w_name_endpoints_rxfilter() and csp_zmqhub_init_filter2() cannot build without asserts,
+	as that triggers -Werror=unused-but-set-variable for the 'int ret;' variable.
+	We fix this by building with assert anyway, as we don't have any other error handling. */
+#undef NDEBUG
+
 #include <zmq.h>
 #include <assert.h>
 #include <stdlib.h>
