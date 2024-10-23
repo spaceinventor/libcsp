@@ -297,7 +297,7 @@ static PyObject * pycsp_sendto(PyObject * self, PyObject * args) {
 	uint32_t opts;
 	PyObject * packet_capsule;
 	if (!PyArg_ParseTuple(args, "bHbbIO", &prio, &dest, &dport, &src_port, &opts, &packet_capsule)) {
-		Py_RETURN_NONE;
+		return NULL;
 	}
 	csp_packet_t * packet = get_obj_as_packet(packet_capsule, false);
 	if (packet == NULL) {
@@ -381,10 +381,13 @@ static PyObject * pycsp_connect(PyObject * self, PyObject * args) {
 
 static PyObject * pycsp_close(PyObject * self, PyObject * conn_capsule) {
 	csp_conn_t * conn = get_obj_as_conn(conn_capsule, true);
-	if (conn) {
-		csp_close(conn);
-		PyCapsule_SetPointer(conn_capsule, &CSP_POINTER_HAS_BEEN_FREED);
+
+	if (conn == NULL) {
+		return NULL;  // TypeError is thrown
 	}
+
+	csp_close(conn);
+	PyCapsule_SetPointer(conn_capsule, &CSP_POINTER_HAS_BEEN_FREED);
 
 	return Py_BuildValue("i", CSP_ERR_NONE);
 }
@@ -730,7 +733,7 @@ static PyObject * pycsp_cmp_peek(PyObject * self, PyObject * args) {
 	uint8_t len;
 	Py_buffer outbuf;
 	if (!PyArg_ParseTuple(args, "HIIbw*", &node, &timeout, &addr, &len, &outbuf)) {
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	if ((len > CSP_CMP_PEEK_MAX_LEN) || (len > outbuf.len)) {
@@ -763,7 +766,7 @@ static PyObject * pycsp_cmp_poke(PyObject * self, PyObject * args) {
 	Py_buffer inbuf;
 
 	if (!PyArg_ParseTuple(args, "HIIbw*", &node, &timeout, &addr, &len, &inbuf)) {
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	if (len > CSP_CMP_POKE_MAX_LEN) {
@@ -791,7 +794,7 @@ static PyObject * pycsp_cmp_clock_set(PyObject * self, PyObject * args) {
 	uint32_t nsec;
 	uint32_t timeout = 1000;
 	if (!PyArg_ParseTuple(args, "HII|I", &node, &sec, &nsec, &timeout)) {
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	if (sec == 0) {
@@ -818,7 +821,7 @@ static PyObject * pycsp_cmp_clock_get(PyObject * self, PyObject * args) {
 	uint16_t node;
 	uint32_t timeout = 1000;
 	if (!PyArg_ParseTuple(args, "H|I", &node, &timeout)) {
-		Py_RETURN_NONE;
+		return NULL;
 	}
 
 	struct csp_cmp_message msg;
@@ -875,7 +878,7 @@ static PyObject * pycsp_kiss_init(PyObject * self, PyObject * args) {
 	char * device;
 	uint32_t baudrate = 500000;
 	uint32_t mtu = 512;
-	uint16_t addr;
+	uint16_t addr = 0;
 	const char * if_name = CSP_IF_KISS_DEFAULT_NAME;
 	if (!PyArg_ParseTuple(args, "sH|IIs", &device, &addr, &baudrate, &mtu, &if_name)) {
 		return NULL;  // TypeError is thrown
@@ -963,7 +966,7 @@ static PyMethodDef methods[] = {
 	{"conn_src", pycsp_conn_src, METH_O, ""},
 	{"listen", pycsp_listen, METH_VARARGS, ""},
 	{"bind", pycsp_bind, METH_VARARGS, ""},
-	{"route_start_task", pycsp_route_start_task, METH_VARARGS, ""},
+	{"route_start_task", pycsp_route_start_task, METH_NOARGS, ""},
 	{"ping", pycsp_ping, METH_VARARGS, ""},
 	{"reboot", pycsp_reboot, METH_VARARGS, ""},
 	{"shutdown", pycsp_shutdown, METH_VARARGS, ""},
@@ -981,7 +984,7 @@ static PyMethodDef methods[] = {
 
 	/* csp/csp_buffer.h */
 	{"buffer_free", pycsp_buffer_free, METH_VARARGS, ""},
-	{"buffer_get", pycsp_buffer_get, METH_VARARGS, ""},
+	{"buffer_get", pycsp_buffer_get, METH_NOARGS, ""},
 	{"buffer_remaining", pycsp_buffer_remaining, METH_NOARGS, ""},
 
 	/* csp/csp_cmp.h */
