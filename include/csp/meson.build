@@ -1,1 +1,2 @@
-csp_config_h = configure_file(output: 'autoconfig.h', configuration: conf, install_dir: 'include/csp/')
+# pip3 freaks out if it thinks it must install autoconfig.h
+csp_config_h = configure_file(output: 'autoconfig.h', configuration: conf, install_dir: 'include/csp/', install: false)

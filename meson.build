@@ -69,7 +69,8 @@ csp_c_args = ['-Wshadow',
 subdir('src')
 subdir('include/csp')
 
-if not meson.is_subproject()
+if not meson.is_subproject() and not get_option('enable_python3_bindings')
+  # Installing headers neither makes sense nor works (seemingly) when pip3 installing
   install_subdir('include', install_dir : '.')
   install_headers(csp_config_h, install_dir : 'include/csp')
 endif
@@ -96,13 +97,36 @@ subdir('examples')
 
 if get_option('enable_python3_bindings')
 
+	# Add .pyi file for type-hints
+	pyi = configure_file(input: 'src/bindings/python/libcsp_py3.pyi', output: 'libcsp_py3.pyi', copy: true)
 
-	py = import('python').find_installation('python3')
+	# Also add __init__.py for high-level APIs
+	__init__py = configure_file(input: 'src/bindings/python/__init__.py', output: '__init__.py', copy: true)
+
+	# "pure : false" allows the __init__.py package to contain both 'native' Python .pyi and a compiled .so files.
+	py = import('python').find_installation('python3', pure : false)
 	# py.dependency() doesn't work with version constraint. Use plain
 	# dependency() instead
 	pydep = dependency('python3', version : '>=3.5', required : true)
 	py.extension_module('libcsp_py3', 'src/bindings/python/pycsp.c',
                     	c_args : csp_c_args,
                     	dependencies : [csp_dep, pydep],
+						subdir : 'libcsp_py3',
                     	install : true)
+	py.install_sources([pyi, __init__py], subdir: 'libcsp_py3')
+
+	# If we mark libcsp itself as install: true,
+	#	it will be installed in a seperate site-packages/.libcsp_py3.mesonpy.libs/ directory when installing with pip.
+	#	This directory will also work for the purpose of resolving symbols for the extension module.
+	# Alternativly we can use the following custom_target() to bundle libcsp.so into the .whl.
+	#	This allows us to write the __init__.py to prioritize whether to use the bundled or system package/symbols.
+	#   Using a custom target for this takes inpiration from: https://github.com/mesonbuild/meson-python/discussions/556
+	copy_csp_lib = custom_target('libcsp_pip',
+		output: 'libcsp_pip.so',
+		install: true,
+		install_dir: py.get_install_dir() / 'libcsp_py3',
+		input: csp_lib,
+		command: ['cp', '@INPUT@', '@OUTPUT@'],
+		build_by_default: true
+	)
 endif
