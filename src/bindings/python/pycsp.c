@@ -650,7 +650,7 @@ static PyObject * pycsp_print_routes(PyObject * self, PyObject * args) {
 static PyObject * pycsp_buffer_get(PyObject * self, PyObject * args) {
 
 	Py_ssize_t unused_size;
-	if (!PyArg_ParseTuple(args, "|O", &unused_size)) {
+	if (!PyArg_ParseTuple(args, "|n", &unused_size)) {
 		return NULL;  // TypeError is thrown
 	}
 
