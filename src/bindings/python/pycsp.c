@@ -648,7 +648,13 @@ static PyObject * pycsp_print_routes(PyObject * self, PyObject * args) {
 #endif
 
 static PyObject * pycsp_buffer_get(PyObject * self, PyObject * args) {
-	void * packet = csp_buffer_get(0);
+
+	Py_ssize_t unused_size;
+	if (!PyArg_ParseTuple(args, "|O", &unused_size)) {
+		return NULL;  // TypeError is thrown
+	}
+
+	void * packet = csp_buffer_get(unused_size);
 	if (packet == NULL) {
 		return PyErr_Error("csp_buffer_get() - no free buffers or data overrun", CSP_ERR_NOMEM);
 	}
@@ -984,7 +990,7 @@ static PyMethodDef methods[] = {
 
 	/* csp/csp_buffer.h */
 	{"buffer_free", pycsp_buffer_free, METH_VARARGS, ""},
-	{"buffer_get", pycsp_buffer_get, METH_NOARGS, ""},
+	{"buffer_get", pycsp_buffer_get, METH_VARARGS, ""},
 	{"buffer_remaining", pycsp_buffer_remaining, METH_NOARGS, ""},
 
 	/* csp/csp_cmp.h */
