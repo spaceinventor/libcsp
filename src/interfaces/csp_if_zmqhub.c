@@ -155,16 +155,16 @@ int csp_zmqhub_init_w_endpoints(uint16_t addr,
 													 return_interface);
 }
 
-#if 1
 static void csp_zmqhub_driver_destroy(zmq_driver_t ** _drv, const char * const publish_endpoint, const char * const subscribe_endpoint) {
 
 	if (*_drv == NULL) {
 		return;
 	}
 
-	zmq_driver_t * drv = *_drv;
+	zmq_driver_t * const drv = *_drv;
 
 	int ret;
+	(void)ret; /* Silence unused variable warning (promoted to an error if -Werr) issued when building with NDEBUG (release with asserts turned off) */
 
 	if (subscribe_endpoint != NULL) {
 		ret = zmq_disconnect(drv->subscriber, subscribe_endpoint);
@@ -195,7 +195,6 @@ static void csp_zmqhub_driver_destroy(zmq_driver_t ** _drv, const char * const p
 	*_drv = NULL;
 
 }
-#endif
 
 int csp_zmqhub_init_w_name_endpoints_rxfilter(const char * ifname, uint16_t addr,
 											  const uint16_t rxfilter[], unsigned int rxfilter_count,
