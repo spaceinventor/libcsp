@@ -5,6 +5,7 @@
 
 #include <FreeRTOS.h>
 #include <queue.h>
+#include "compat.h"
 
 csp_queue_handle_t csp_queue_create_static(int length, size_t item_size, char * buffer, csp_static_queue_t * queue) {
 	return xQueueCreateStatic(length, item_size, (uint8_t *)buffer, queue);

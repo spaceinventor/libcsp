@@ -58,7 +58,7 @@ void csp_crc32_update(csp_crc32_t * crc, const void * data, uint32_t length) {
 	if (crc) {
 		while (length--) {
 #ifdef __AVR__
-			crc = pgm_read_dword(&crc_tab[(crc ^ *data8++) & 0xFFL]) ^ (crc >> 8);
+			*crc = pgm_read_dword(&crc_tab[(*crc ^ *data8++) & 0xFFL]) ^ (*crc >> 8);
 #else
 			(*crc) = crc_tab[((*crc) ^ *data8++) & 0xFFL] ^ ((*crc) >> 8);
 #endif
@@ -134,7 +134,7 @@ int csp_crc32_verify(csp_packet_t * packet) {
 		if (memcmp(&packet->data[packet->length] - sizeof(crc), &crc, sizeof(crc)) != 0) {
 			return CSP_ERR_CRC32;
 		}
-		
+
 	}
 
 	/* Strip CRC32 */

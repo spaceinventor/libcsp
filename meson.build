@@ -81,7 +81,7 @@ csp_lib = library('csp',
 	dependencies : csp_deps,
 	c_args : csp_c_args,
 	install : false,
-	pic:true,
+	pic: get_option('enable_pic'),
 )
 
 # The following dependency variable is for parent projects to link

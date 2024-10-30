@@ -17,7 +17,7 @@ int csp_iflist_is_within_subnet(uint16_t addr, csp_iface_t * ifc) {
 	if (ifc == NULL) {
 		return 0;
 	}
-	
+
 	uint16_t netmask = ((1 << ifc->netmask) - 1) << (csp_id_get_host_bits() - ifc->netmask);
 	uint16_t network_a = ifc->addr & netmask;
 	uint16_t network_b = addr & netmask;
@@ -204,6 +204,9 @@ csp_iface_t * csp_iflist_get(void) {
 	return interfaces;
 }
 
+
+#if (CSP_ENABLE_CSP_PRINT)
+
 unsigned long csp_bytesize(unsigned long bytes, char *postfix) {
 	unsigned long size;
 
@@ -220,8 +223,6 @@ unsigned long csp_bytesize(unsigned long bytes, char *postfix) {
 
 	return size;
 }
-
-#if (CSP_ENABLE_CSP_PRINT)
 
 void csp_iflist_print(void) {
 	csp_iface_t * i = interfaces;

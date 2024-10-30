@@ -314,7 +314,7 @@ int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t 
 		/* FRAGMENT */
 	} else {
 
-		int fragment_counter = (id >> CFP2_FC_OFFSET) & CFP2_FC_MASK;
+		uint16_t fragment_counter = (id >> CFP2_FC_OFFSET) & CFP2_FC_MASK;
 
 		/* Check fragment counter is increasing:
 		 * We abuse / reuse the rx_count pbuf field
@@ -377,13 +377,13 @@ int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fr
 
 	/* Setup counters */
 	int sender_count = ifdata->cfp_packet_counter++;
-	int tx_count = 0;
+	uint16_t tx_count = 0;
 
 	uint32_t can_id = 0;
 	uint8_t frame_buf_inp = 0;
 
 	/* Pack mandatory fields of header */
-	can_id = (((packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
+	can_id = (((uint32_t)(packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
 			  ((packet->id.dst & CFP2_DST_MASK) << CFP2_DST_OFFSET) |
 			  ((iface->addr & CFP2_SENDER_MASK) << CFP2_SENDER_OFFSET) |
 			  ((sender_count & CFP2_SC_MASK) << CFP2_SC_OFFSET) |
@@ -394,7 +394,7 @@ int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fr
     uint8_t *frame_buf = (uint8_t*)frame_buf_mem;
 	uint32_t * header_extension = (uint32_t *)frame_buf_mem;
 
-	*header_extension = (((packet->id.src & CFP2_SRC_MASK) << CFP2_SRC_OFFSET) |
+	*header_extension = (((uint32_t)(packet->id.src & CFP2_SRC_MASK) << CFP2_SRC_OFFSET) |
 						 ((packet->id.dport & CFP2_DPORT_MASK) << CFP2_DPORT_OFFSET) |
 						 ((packet->id.sport & CFP2_SPORT_MASK) << CFP2_SPORT_OFFSET) |
 						 ((packet->id.flags & CFP2_FLAGS_MASK) << CFP2_FLAGS_OFFSET));
@@ -427,7 +427,7 @@ int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fr
 	while (tx_count < packet->length) {
 
 		/* Pack mandatory fields of header */
-		can_id = (((packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
+		can_id = (((uint32_t)(packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
 				  ((packet->id.dst & CFP2_DST_MASK) << CFP2_DST_OFFSET) |
 				  ((iface->addr & CFP2_SENDER_MASK) << CFP2_SENDER_OFFSET) |
 				  ((sender_count & CFP2_SC_MASK) << CFP2_SC_OFFSET));

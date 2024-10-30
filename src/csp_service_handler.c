@@ -30,6 +30,7 @@ void csp_cmp_set_memcpy(csp_memcpy_fnc_t fnc) {
 	csp_cmp_memcpy_fnc = fnc;
 }
 
+#ifndef __AVR__
 void csp_cmp_set_memread64(csp_memread64_fnc_t fnc) {
 	csp_cmp_memread64_fnc = fnc;
 }
@@ -37,6 +38,7 @@ void csp_cmp_set_memread64(csp_memread64_fnc_t fnc) {
 void csp_cmp_set_memwrite64(csp_memwrite64_fnc_t fnc) {
 	csp_cmp_memwrite64_fnc = fnc;
 }
+#endif
 
 static int do_cmp_ident(struct csp_cmp_message * cmp) {
 
@@ -140,6 +142,7 @@ static int do_cmp_poke(struct csp_cmp_message * cmp) {
 	return CSP_ERR_NONE;
 }
 
+#ifndef __AVR__
 static int do_cmp_peek_v2(struct csp_cmp_message * cmp) {
 
 	cmp->peek_v2.vaddr = htobe64(cmp->peek_v2.vaddr);
@@ -171,6 +174,7 @@ static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 
 	return CSP_ERR_NONE;
 }
+#endif
 
 static int do_cmp_clock(struct csp_cmp_message * cmp) {
 
@@ -234,6 +238,7 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 			ret = do_cmp_poke(cmp);
 			break;
 
+#ifndef __AVR__
 		case CSP_CMP_PEEK_V2:
 			ret = do_cmp_peek_v2(cmp);
 			break;
@@ -241,6 +246,7 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 		case CSP_CMP_POKE_V2:
 			ret = do_cmp_poke_v2(cmp);
 			break;
+#endif
 
 		case CSP_CMP_CLOCK:
 			ret = do_cmp_clock(cmp);
@@ -284,7 +290,7 @@ void csp_service_handler(csp_packet_t * packet) {
 
 			uint32_t total = 0;
 			total = csp_memfree_hook();
-			
+
 			total = htobe32(total);
 			memcpy(packet->data, &total, sizeof(total));
 			packet->length = sizeof(total);

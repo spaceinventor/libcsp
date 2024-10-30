@@ -20,7 +20,7 @@
  */
 bool eth_debug = false;
 
-bool csp_eth_pack_header(csp_eth_header_t * buf, 
+bool csp_eth_pack_header(csp_eth_header_t * buf,
                             uint16_t packet_id, uint16_t src_addr,
                             uint16_t seg_size, uint16_t packet_length) {
 
@@ -34,7 +34,7 @@ bool csp_eth_pack_header(csp_eth_header_t * buf,
     return true;
 }
 
-bool csp_if_eth_unpack_header(csp_eth_header_t * buf, 
+bool csp_if_eth_unpack_header(csp_eth_header_t * buf,
                               uint32_t * packet_id,
                               uint16_t * seg_size, uint16_t * packet_length) {
 
@@ -42,7 +42,7 @@ bool csp_if_eth_unpack_header(csp_eth_header_t * buf,
     if (seg_size == NULL) return false;
     if (packet_length == NULL) return false;
 
-    *packet_id = buf->packet_id << 16 | buf->src_addr;
+    *packet_id = (uint32_t)buf->packet_id << 16 | buf->src_addr;
     *seg_size = be16toh(buf->seg_size);
     *packet_length = be16toh(buf->packet_length);
 
@@ -52,7 +52,7 @@ bool csp_if_eth_unpack_header(csp_eth_header_t * buf,
 /**
  * Address resolution (ARP)
  * All received (ETH MAC, CSP src) are recorded and used to map destination address to MAC addresses,
- * used in uni-cast. Until a packet from a CSP address has been received, ETH broadcast is used to this address. 
+ * used in uni-cast. Until a packet from a CSP address has been received, ETH broadcast is used to this address.
  */
 
 #define ARP_MAX_ENTRIES 10
@@ -66,13 +66,13 @@ typedef struct arp_list_entry_s {
 static arp_list_entry_t arp_array[ARP_MAX_ENTRIES];
 static size_t arp_used = 0;
 
-static arp_list_entry_t * arp_list = 0; 
+static arp_list_entry_t * arp_list = 0;
 
 arp_list_entry_t * arp_alloc(void) {
-    
+
     if (arp_used >= ARP_MAX_ENTRIES) {
         return 0;
-    } 
+    }
     return &(arp_array[arp_used++]);
 
 }
