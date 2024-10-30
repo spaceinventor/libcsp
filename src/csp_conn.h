@@ -57,8 +57,13 @@ typedef struct {
 
 /** @brief Connection struct */
 struct csp_conn_s {
+#ifdef __AVR__
+	int type;   /* Connection type (CONN_CLIENT or CONN_SERVER) */
+	int state; /* Connection state (CONN_OPEN or CONN_CLOSED) */
+#else
 	atomic_int type;   /* Connection type (CONN_CLIENT or CONN_SERVER) */
 	atomic_int state; /* Connection state (CONN_OPEN or CONN_CLOSED) */
+#endif
 	csp_id_t idin;          /* Identifier received */
 	csp_id_t idout;         /* Identifier transmitted */
 	uint8_t sport_outgoing; /* When used for outgoing, use this sport */
