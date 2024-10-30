@@ -19,6 +19,20 @@ static PyObject * Error = NULL;
 static int CSP_POINTER_HAS_BEEN_FREED = 0;  // used to indicate pointer has been freed, because a NULL pointer can't be set.
 
 static void * get_capsule_pointer(PyObject * capsule, const char * expected_type, bool allow_null) {
+	if (!PyCapsule_CheckExact(capsule)) {
+		PyObject *py_str = PyObject_Str((PyObject*)Py_TYPE(capsule));  // New reference
+		if (!py_str) {
+			return NULL;  // Assume memory exception has been set
+		}
+		const char * const c_str = PyUnicode_AsUTF8(py_str);  // Borrowed reference, no new allocation
+		if (!c_str) {
+			Py_DECREF(py_str);
+			return NULL;
+		}
+		PyErr_Format(PyExc_TypeError, "provided argument was not of capsule type, got=%s", c_str);
+		Py_DECREF(py_str);
+		return NULL;
+	}
 	const char * capsule_name = PyCapsule_GetName(capsule);
 	if (strcmp(capsule_name, expected_type) != 0) {
 		PyErr_Format(PyExc_TypeError,
