@@ -8,8 +8,11 @@ except ImportError as e:  # Use bundled symbols instead
 
     from types import ModuleType as _ModuleType
 
-    def _import_libcsp_so(package_dir: str = None, so_filename: str = 'libcsp_pip.so') -> _ModuleType:
-        """ Import bundled libcsp.so, while hiding as many of our importation dependencies as possible """
+    def _import_libcsp_so(package_dir: str = None) -> _ModuleType:
+        """
+        Import bundled or system version of libcsp.so,
+        while hiding as many of our importation dependencies as possible
+        """
 
         import os
         from ctypes import CDLL, RTLD_GLOBAL
@@ -18,8 +21,15 @@ except ImportError as e:  # Use bundled symbols instead
         if package_dir is None:
             package_dir = os.path.dirname(__file__)
 
+        try:  # Attempt to find and link a system library version of libcsp.so
+            # Using the name of libcsp.so here may be a bit fragile.
+            return CDLL("libcsp.so", mode=RTLD_GLOBAL)
+        except OSError as e:  # Use bundled libcsp.so instead.
+            #assert "cannot open shared object file: No such file or directory" in e.strerror
+            pass
+
         # Construct the full path to the shared object file
-        so_filepath = os.path.join(package_dir, so_filename)
+        so_filepath = os.path.join(package_dir, 'libcsp_pip.so')
 
         # Load the shared object file using ctypes, so can expose C symbols.
         # This may be Linux specific.
