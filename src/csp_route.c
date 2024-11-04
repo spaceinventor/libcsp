@@ -138,6 +138,7 @@ int csp_route_work(void) {
 	 * or the address matches the broadcast address of the incoming interface */
 	int is_to_me = (csp_iflist_get_by_addr(packet->id.dst) != NULL || (csp_id_is_broadcast(packet->id.dst, input.iface)));
 
+#if (CSP_USE_DEDUP)
 	/* Deduplication */
 	if ((csp_conf.dedup == CSP_DEDUP_ALL) ||
 		((is_to_me) && (csp_conf.dedup == CSP_DEDUP_INCOMING)) ||
@@ -149,6 +150,7 @@ int csp_route_work(void) {
 			return CSP_ERR_NONE;
 		}
 	}
+#endif
 
 	/* Here there be promiscuous mode */
 #if (CSP_USE_PROMISC)
@@ -171,7 +173,7 @@ int csp_route_work(void) {
 	}
 
 	/**
-	 * Callbacks 
+	 * Callbacks
 	 */
 	csp_callback_t callback = csp_port_get_callback(packet->id.dport);
 	if (callback) {
@@ -186,7 +188,7 @@ int csp_route_work(void) {
 	}
 
 	/**
-	 * Sockets 
+	 * Sockets
 	 */
 
 	/* The message is to me, search for incoming socket */
@@ -205,7 +207,7 @@ int csp_route_work(void) {
 			csp_buffer_free(packet);
 			return CSP_ERR_NONE;
 		}
-		
+
 		return CSP_ERR_NONE;
 	}
 
