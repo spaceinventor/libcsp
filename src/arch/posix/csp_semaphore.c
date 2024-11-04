@@ -6,6 +6,7 @@
 
 #include <semaphore.h>
 #include <time.h>
+#include <stdint.h>
 
 void csp_bin_sem_init(csp_bin_sem_t * sem) {
 
