@@ -210,8 +210,8 @@ csp_iface_t * csp_iflist_get(void) {
 unsigned long csp_bytesize(unsigned long bytes, char *postfix) {
 	unsigned long size;
 
-	if (bytes >= (1024 * 1024)) {
-		size = bytes / (1024 * 1024);
+	if (bytes >= 1048576) {
+		size = bytes / 1048576;
 		*postfix = 'M';
 	} else if (bytes >= 1024) {
 		size = bytes / 1024;
