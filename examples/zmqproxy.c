@@ -6,6 +6,7 @@
 
 #include <csp/csp.h>
 #include <csp/csp_id.h>
+#include <csp/interfaces/csp_if_zmqhub.h>
 
 int debug = 0;
 const char * sub_str = "tcp://0.0.0.0:6000";
@@ -64,9 +65,11 @@ static void * task_capture(void * ctx) {
 			continue;
 		}
 
+		uint8_t * rx_data = csp_zmqhub_fixup_cspv1_del_dest_addr(zmq_msg_data(&msg), &datalen);
+
 		/* Copy to packet */
 		csp_id_setup_rx(packet);
-		memcpy(packet->frame_begin, zmq_msg_data(&msg), datalen);
+		memcpy(packet->frame_begin, rx_data, datalen);
 		packet->frame_length = datalen;
 
 		/* Parse header */

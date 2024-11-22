@@ -123,6 +123,9 @@ int csp_zmqhub_init_w_name_endpoints_rxfilter(const char * ifname, uint16_t addr
 int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport);
 
 
+void csp_zmqhub_fixup_cspv1_add_dest_addr(csp_packet_t * packet);
+void * csp_zmqhub_fixup_cspv1_del_dest_addr(uint8_t * rx_data, size_t * datalen);
+
 #ifdef __cplusplus
 }
 #endif
