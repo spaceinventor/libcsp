@@ -46,8 +46,9 @@ static void * socketcan_rx_thread(void * arg) {
 		fd_set input;
 		FD_ZERO(&input);
 		FD_SET(ctx->socket, &input);
-		struct timeval timeout;
-		timeout.tv_sec = 10;
+		struct timeval timeout = {
+			.tv_sec = 10,
+		};
 		int n = select(ctx->socket + 1, &input, NULL, NULL, &timeout);
 		if (n == -1) {
 			csp_print("CAN read error\n");
