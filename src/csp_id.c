@@ -37,7 +37,7 @@
 
 #define CSP_ID1_HEADER_SIZE 4
 
-static void csp_id1_prepend(csp_packet_t * packet) {
+static void csp_id1_prepend(csp_packet_t * packet, bool network_byte_order) {
 
 	/* Pack into 32-bit using host endian */
 	uint32_t id1 = (((uint32_t)(packet->id.pri) << CSP_ID1_PRIO_OFFSET) |
@@ -48,7 +48,11 @@ static void csp_id1_prepend(csp_packet_t * packet) {
 					((uint32_t)(packet->id.flags) << CSP_ID1_FLAGS_OFFSET));
 
 	/* Convert to big / network endian */
-	id1 = htobe32(id1);
+	if (network_byte_order) {
+		id1 = htobe32(id1);
+	} else {
+		id1 = htole32(id1);
+	}
 
 	packet->frame_begin = packet->data - CSP_ID1_HEADER_SIZE;
 	packet->frame_length = packet->length + CSP_ID1_HEADER_SIZE;
@@ -56,7 +60,7 @@ static void csp_id1_prepend(csp_packet_t * packet) {
 	memcpy(packet->frame_begin, &id1, CSP_ID1_HEADER_SIZE);
 }
 
-static int csp_id1_strip(csp_packet_t * packet) {
+static int csp_id1_strip(csp_packet_t * packet, bool network_byte_order) {
 
 	if (packet->frame_length < CSP_ID1_HEADER_SIZE) {
 		return -1;
@@ -68,7 +72,11 @@ static int csp_id1_strip(csp_packet_t * packet) {
 	packet->length = packet->frame_length - CSP_ID1_HEADER_SIZE;
 
 	/* Convert to host order */
-	id1 = be32toh(id1);
+	if (network_byte_order) {
+		id1 = be32toh(id1);
+	} else {
+		id1 = le32toh(id1);
+	}
 
 	/* Parse header:
 	 * Now in easy to work with in 32 bit register */
@@ -182,7 +190,7 @@ void csp_id_prepend(csp_packet_t * packet) {
 	if (csp_conf.version == 2) {
 		csp_id2_prepend(packet);
 	} else {
-		csp_id1_prepend(packet);
+		csp_id1_prepend(packet, true);
 	}
 }
 
@@ -190,7 +198,24 @@ int csp_id_strip(csp_packet_t * packet) {
 	if (csp_conf.version == 2) {
 		return csp_id2_strip(packet);
 	} else {
-		return csp_id1_strip(packet);
+		return csp_id1_strip(packet, true);
+	}
+}
+
+void csp_id_prepend_fixup_cspv1(csp_packet_t * packet) {
+	if (csp_conf.version == 2) {
+		csp_id2_prepend(packet);
+	} else {
+		csp_id1_prepend(packet, false);
+
+	}
+}
+
+int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
+	if (csp_conf.version == 2) {
+		return csp_id2_strip(packet);
+	} else {
+		return csp_id1_strip(packet, false);
 	}
 }
 

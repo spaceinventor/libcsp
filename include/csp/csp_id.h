@@ -15,6 +15,9 @@ unsigned int csp_id_get_max_port(void);
 
 int csp_id_is_broadcast(uint16_t addr, csp_iface_t * iface);
 
+void csp_id_prepend_fixup_cspv1(csp_packet_t * packet);
+int csp_id_strip_fixup_cspv1(csp_packet_t * packet);
+
 #ifdef __cplusplus
 }
 #endif
