@@ -76,7 +76,7 @@ void * csp_zmqhub_task(void * param) {
 			continue;
 		}
 
-		unsigned int datalen = zmq_msg_size(&msg);
+		size_t datalen = zmq_msg_size(&msg);
 		if (datalen < HEADER_SIZE) {
 			csp_print("ZMQ RX %s: Too short datalen: %u - expected min %u bytes\n", drv->iface.name, datalen, HEADER_SIZE);
 			zmq_msg_close(&msg);
