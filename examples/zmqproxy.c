@@ -5,9 +5,7 @@
 #include <pthread.h>
 
 #include <csp/csp.h>
-
-int csp_id_strip(csp_packet_t * packet);
-int csp_id_setup_rx(csp_packet_t * packet);
+#include <csp/csp_id.h>
 
 int debug = 0;
 const char * sub_str = "tcp://0.0.0.0:6000";
