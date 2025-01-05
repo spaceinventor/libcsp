@@ -58,7 +58,7 @@ static void * task_capture(void * ctx) {
 			continue;
 		}
 
-		int datalen = zmq_msg_size(&msg);
+		size_t datalen = zmq_msg_size(&msg);
 		if (datalen < 5) {
 			csp_print("ZMQ: Too short datalen: %u\n", datalen);
 			while (zmq_msg_recv(&msg, subscriber, ZMQ_NOBLOCK) > 0)
