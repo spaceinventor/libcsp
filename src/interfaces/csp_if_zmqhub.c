@@ -92,7 +92,7 @@ void * csp_zmqhub_task(void * param) {
 		}
 
 		// Copy the data from zmq to csp
-		const uint8_t * rx_data = zmq_msg_data(&msg);
+		uint8_t * rx_data = zmq_msg_data(&msg);
 
 		csp_id_setup_rx(packet);
 
