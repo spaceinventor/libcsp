@@ -80,7 +80,7 @@ int csp_zmqhub_tx(csp_iface_t * iface, uint16_t __maybe_unused via, csp_packet_t
 
 	zmq_driver_t * drv = iface->driver_data;
 
-	csp_id_prepend(packet);
+	csp_id_prepend_fixup_cspv1(packet);
 	csp_zmqhub_fixup_cspv1_add_dest_addr(packet);
 
 	/**
@@ -143,7 +143,7 @@ void * csp_zmqhub_task(void * param) {
 		packet->frame_length = datalen;
 
 		/* Parse the frame and strip the ID field */
-		if (csp_id_strip(packet) != 0) {
+		if (csp_id_strip_fixup_cspv1(packet) != 0) {
 			drv->iface.rx_error++;
 			csp_buffer_free(packet);
 		    zmq_msg_close(&msg);
