@@ -51,6 +51,8 @@ def options(ctx):
     # OS
     gr.add_option('--with-os', metavar='OS', default='posix', help='Set operating system. Must be one of: ' + str(valid_os))
 
+    # Fixup
+    gr.add_option('--fixup-v1-zmq-little-endian', action='store_true', help='Use little-endian CSP ID for ZMQ with CSPv1')
 
 def configure(ctx):
     # Validate options
@@ -195,6 +197,7 @@ def configure(ctx):
     ctx.define('CSP_USE_RTABLE', ctx.options.enable_rtable)
     ctx.define('CSP_BUFFER_ZERO_CLEAR', ctx.options.disable_buffer_zero_clear)
 
+    ctx.define('CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN', ctx.options.fixup_v1_zmq_little_endian)
 
     ctx.write_config_header('include/csp/autoconfig.h')
 
