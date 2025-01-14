@@ -15,8 +15,17 @@ unsigned int csp_id_get_max_port(void);
 
 int csp_id_is_broadcast(uint16_t addr, csp_iface_t * iface);
 
+#if (CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN)
 void csp_id_prepend_fixup_cspv1(csp_packet_t * packet);
 int csp_id_strip_fixup_cspv1(csp_packet_t * packet);
+#else
+static inline void csp_id_prepend_fixup_cspv1(csp_packet_t * packet) {
+	csp_id_prepend(packet);
+}
+static inline int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
+	return csp_id_strip(packet);
+}
+#endif
 
 #ifdef __cplusplus
 }

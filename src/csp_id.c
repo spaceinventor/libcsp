@@ -202,6 +202,8 @@ int csp_id_strip(csp_packet_t * packet) {
 	}
 }
 
+#if (CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN)
+
 void csp_id_prepend_fixup_cspv1(csp_packet_t * packet) {
 	if (csp_conf.version == 2) {
 		csp_id2_prepend(packet);
@@ -218,6 +220,8 @@ int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
 		return csp_id1_strip(packet, true);
 	}
 }
+
+#endif
 
 int csp_id_setup_rx(csp_packet_t * packet) {
 	if (csp_conf.version == 2) {
