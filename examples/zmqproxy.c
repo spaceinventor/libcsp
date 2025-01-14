@@ -73,7 +73,7 @@ static void * task_capture(void * ctx) {
 		packet->frame_length = datalen;
 
 		/* Parse header */
-		csp_id_strip(packet);
+		csp_id_strip_fixup_cspv1(packet);
 
 		/* Print header data */
 		csp_print("Packet: Src %u, Dst %u, Dport %u, Sport %u, Pri %u, Flags 0x%02X, Size %" PRIu16 "\n",
