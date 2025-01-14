@@ -39,6 +39,8 @@ option(CSP_BUFFER_ZERO_CLEAR "Zero out the packet buffer upon allocation" ON)
 option(CSP_ENABLE_PYTHON3_BINDINGS "Build Python3 binding" OFF)
 option(CSP_BUILD_SAMPLES "Build samples and examples by default" OFF)
 
+option(CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN "Use little-endian CSP ID for ZMQ with CSPv1" ON)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CSP_POSIX 1)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Generic")

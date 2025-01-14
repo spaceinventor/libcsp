@@ -25,3 +25,5 @@
 
 #cmakedefine01 CSP_HAVE_LIBSOCKETCAN
 #cmakedefine01 CSP_HAVE_LIBZMQ
+
+#cmakedefine01 CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN
