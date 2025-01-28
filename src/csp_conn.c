@@ -258,7 +258,7 @@ csp_conn_t * csp_connect(uint8_t prio, uint16_t dest, uint8_t dport, uint32_t ti
 	 * This means that for this outgoing connection, we accept the answer coming to whatever address
 	 * the outgoing interface has. CSP does not support "source address" on outgoing connections
 	 * so the outgoing source address will be automatically applied after outgoing routing
-	 * selects which interface the packet will leavve from */
+	 * selects which interface the packet will leave from */
 	incoming_id.dst = 0;
 	outgoing_id.src = 0;
 
