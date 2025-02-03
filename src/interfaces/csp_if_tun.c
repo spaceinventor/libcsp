@@ -112,7 +112,7 @@ void csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf) {
 
 	iface->driver_data = ifconf;
 
-	/* Regsiter interface */
+	/* Register interface */
 	iface->name = "TUN",
 	iface->nexthop = csp_if_tun_tx,
 	csp_iflist_add(iface);
