@@ -132,7 +132,7 @@ void csp_if_udp_init(csp_iface_t * iface, csp_if_udp_conf_t * ifconf) {
 		csp_print("csp_if_udp_init: pthread_attr_destroy failed: %s: %d\n", strerror(ret), ret);
 	}
 
-	/* Regsiter interface */
+	/* Register interface */
 	iface->name = "UDP",
 	iface->nexthop = csp_if_udp_tx,
 	csp_iflist_add(iface);
