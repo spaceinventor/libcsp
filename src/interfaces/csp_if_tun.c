@@ -118,4 +118,3 @@ void csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf) {
 	csp_iflist_add(iface);
 
 }
-
