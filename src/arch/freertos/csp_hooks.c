@@ -14,4 +14,3 @@ __weak void csp_reboot_hook(void) {
 
 __weak void csp_shutdown_hook(void) {
 }
-
