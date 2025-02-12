@@ -97,6 +97,7 @@ int csp_rtable_set_internal(uint16_t address, uint16_t netmask, csp_iface_t * if
 
 void csp_rtable_free(void) {
 	memset(rtable, 0, sizeof(rtable));
+	rtable_inptr = 0;
 }
 
 void csp_rtable_clear(void) {
