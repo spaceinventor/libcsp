@@ -252,7 +252,7 @@ csp_conn_t * csp_connect(uint8_t prio, uint16_t dest, uint8_t dport, uint32_t ti
 	opts |= csp_conf.conn_dfl_so;
 
 	/* Generate identifier */
-	csp_id_t incoming_id, outgoing_id;
+	csp_id_t incoming_id = {0}, outgoing_id = {0};
 
 	/* Use 0 as incoming id (this disables the input filter on destination node)
 	 * This means that for this outgoing connection, we accept the answer coming to whatever address
