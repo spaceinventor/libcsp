@@ -17,6 +17,7 @@
 #include <libsocketcan.h>
 
 #include <csp/csp.h>
+#include <csp/csp_id.h>
 
 // CAN interface data, state, etc.
 typedef struct {
@@ -153,26 +154,34 @@ static int csp_can_tx_frame(void * driver_data, uint32_t id, const uint8_t * dat
 
 
 int csp_can_socketcan_set_promisc(const bool promisc, can_context_t * ctx) {
-	struct can_filter filter = {
+
+	struct can_filter filter[3] = { {
 		.can_id = CFP_MAKE_DST(ctx->iface.addr),
 		.can_mask = 0x0000, /* receive anything */
-	};
+	} };
 
 	if (ctx->socket == 0) {
 		return CSP_ERR_INVAL;
 	}
 
+	int num_filters = 1;
 	if (!promisc) {
 		if (csp_conf.version == 1) {
-			filter.can_id = CFP_MAKE_DST(ctx->iface.addr);
-			filter.can_mask = CFP_MAKE_DST((1 << CFP_HOST_SIZE) - 1);
+			num_filters = 1;
+			filter[0].can_id = CFP_MAKE_DST(ctx->iface.addr);
+			filter[0].can_mask = CFP_MAKE_DST((1 << CFP_HOST_SIZE) - 1);
 		} else {
-			filter.can_id = ctx->iface.addr << CFP2_DST_OFFSET;
-			filter.can_mask = CFP2_DST_MASK << CFP2_DST_OFFSET;
+			num_filters = 3;
+			filter[0].can_id = ctx->iface.addr << CFP2_DST_OFFSET;
+			filter[0].can_mask = CFP2_DST_MASK << CFP2_DST_OFFSET;
+			filter[1].can_id = ((1 << (csp_id_get_host_bits() - ctx->iface.netmask)) - 1) << CFP2_DST_OFFSET;
+			filter[1].can_mask = CFP2_DST_MASK << CFP2_DST_OFFSET;
+			filter[2].can_id = 0x3FFF << CFP2_DST_OFFSET;
+			filter[2].can_mask = CFP2_DST_MASK << CFP2_DST_OFFSET;
 		}
 	}
 
-	if (setsockopt(ctx->socket, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter)) < 0) {
+	if (setsockopt(ctx->socket, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, num_filters * sizeof(struct can_filter)) < 0) {
 		csp_print("%s: setsockopt() failed, error: %s\n", __func__, strerror(errno));
 		return CSP_ERR_INVAL;
 	}
