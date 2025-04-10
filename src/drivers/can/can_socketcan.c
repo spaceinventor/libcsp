@@ -38,6 +38,7 @@ static void socketcan_free(can_context_t * ctx) {
 	}
 }
 
+#if 0
 static void * socketcan_rx_thread(void * arg) {
 	can_context_t * ctx = arg;
 
@@ -151,7 +152,7 @@ static int csp_can_tx_frame(void * driver_data, uint32_t id, const uint8_t * dat
 
 	return CSP_ERR_NONE;
 }
-
+#endif
 
 int csp_can_socketcan_set_promisc(const bool promisc, can_context_t * ctx) {
 
@@ -191,10 +192,13 @@ int csp_can_socketcan_set_promisc(const bool promisc, can_context_t * ctx) {
 
 
 int csp_can_socketcan_open_and_add_interface(const char * device, const char * ifname, unsigned int node_id, int bitrate, bool promisc, csp_iface_t ** return_iface) {
+	extern int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int node_id, bool promisc, csp_iface_t ** return_iface);
+	return csp_eth_init("enp2s0", "ETH0", 1200, node_id, 0, return_iface);
+#if 0
 	if (ifname == NULL) {
 		ifname = CSP_IF_CAN_DEFAULT_NAME;
 	}
-
+	
 	csp_print("INIT %s: device: [%s], bitrate: %d, promisc: %d\n", ifname, device, bitrate, promisc);
 
 	/* Set interface up - this may require increased OS privileges */
@@ -274,6 +278,7 @@ int csp_can_socketcan_open_and_add_interface(const char * device, const char * i
 	}
 
 	return CSP_ERR_NONE;
+#endif
 }
 
 csp_iface_t * csp_can_socketcan_init(const char * device, unsigned int node_id, int bitrate, bool promisc) {

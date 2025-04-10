@@ -247,6 +247,25 @@ int csp_conn_close(csp_conn_t * conn, uint8_t closed_by) {
 }
 
 csp_conn_t * csp_connect(uint8_t prio, uint16_t dest, uint8_t dport, uint32_t timeout, uint32_t opts) {
+	switch(dest) {
+		case 179:
+			dest = 5811; /* NODE_ADDRESS  = 5811 */
+			break;
+		case 201:
+			dest = 5833; /* NODE_ADDRESS = 5833 */
+			break;
+		case 202:
+			dest = 5834; /* NODE_ADDRESS = 5834 */
+			break;
+		case 203:
+			dest = 5835; /* NODE_ADDRESS = 5835 */
+			break;
+		case 217:
+			dest = 5849; /* NODE_ADDRESS = 5849 */
+			break;
+		default:
+			break;
+	}
 
 	/* Force options on all connections */
 	opts |= csp_conf.conn_dfl_so;

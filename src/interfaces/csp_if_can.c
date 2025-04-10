@@ -461,6 +461,16 @@ int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fr
 
 int csp_can_add_interface(csp_iface_t * iface) {
 
+	if (iface->addr == 219) {
+		/* Masquerade this to another address */
+		iface->addr = 5851;
+		iface->netmask = 7;
+	} else if (iface->addr == 218) {
+		/* Masquerade this to another address */
+		iface->addr = 5850;
+		iface->netmask = 7;
+	} 
+
 	if ((iface == NULL) || (iface->name == NULL) || (iface->interface_data == NULL)) {
 		return CSP_ERR_INVAL;
 	}
