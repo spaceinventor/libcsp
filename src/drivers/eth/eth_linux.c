@@ -178,11 +178,19 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
 		/* Masquerade this to another address */
 		ctx->ifdata.iface.addr = 5748;
 		ctx->ifdata.iface.netmask = 11;
+	} else if (ctx->ifdata.iface.addr == 116) {
+		/* Masquerade this to another address */
+		ctx->ifdata.iface.addr = 5748;
+		ctx->ifdata.iface.netmask = 11;
 	} else if (ctx->ifdata.iface.addr == 219) {
 		/* Masquerade this to another address */
 		ctx->ifdata.iface.addr = 5749;
 		ctx->ifdata.iface.netmask = 11;
-	} 
+	} else if (ctx->ifdata.iface.addr == 117) {
+		/* Masquerade this to another address */
+		ctx->ifdata.iface.addr = 5749;
+		ctx->ifdata.iface.netmask = 11;
+	}
 
 	if (return_iface) {
 		*return_iface = &ctx->ifdata.iface;
