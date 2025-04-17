@@ -34,6 +34,7 @@ struct csp_iface_s {
 	void * driver_data;         /**< Driver data, only known/used by the driver layer, e.g. device/channel references. */
 	nexthop_t nexthop;          /**< Next hop (Tx) function */
 	uint8_t is_default;         /**< Set default IF flag (CSP supports multiple defaults) */
+	uint8_t broadcast_size;     /**< Select size of broadcast domain of the particular interface (defaulting to 1) */
 
 	/* Stats */
 	uint32_t tx;                /**< Successfully transmitted packets */
