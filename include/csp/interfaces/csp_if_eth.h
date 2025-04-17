@@ -90,7 +90,6 @@ typedef int (*csp_eth_driver_tx_t)(void * driver_data, csp_eth_header_t * eth_fr
  */
 typedef struct {
 	csp_iface_t iface;
-	bool promisc;
 	uint16_t tx_mtu;
 	csp_eth_driver_tx_t tx_func;
 	csp_eth_header_t * tx_buf;
