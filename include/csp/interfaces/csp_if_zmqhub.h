@@ -120,7 +120,7 @@ int csp_zmqhub_init_w_name_endpoints_rxfilter(const char * ifname, uint16_t addr
  * If a secret key curve zmq is enabled
  */
 
-int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport);
+int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, uint8_t broadcast_size, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport);
 
 
 #ifdef __cplusplus
