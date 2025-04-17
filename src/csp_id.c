@@ -237,11 +237,6 @@ int csp_id_is_broadcast(uint16_t addr, csp_iface_t * iface) {
 
 	uint16_t hostmask = (1 << (csp_id_get_host_bits() - iface->netmask)) - 1;
 	uint16_t netmask = (1 << csp_id_get_host_bits()) - 1 - hostmask;
-
-	if ((addr & netmask) != (iface->addr & netmask)) {
-		return 0;
-	}
-
 	uint16_t hostaddr = addr & hostmask;
 
 	if ((hostaddr > hostmask - iface->broadcast_size)) {
