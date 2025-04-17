@@ -158,10 +158,6 @@ void csp_iflist_add(csp_iface_t * ifc) {
 		return;
 	}
 
-	if (ifc->broadcast_size == 0) {
-		ifc->broadcast_size = 1;
-	}
-
 	ifc->next = NULL;
 
 	/* Add interface to pool */
