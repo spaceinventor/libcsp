@@ -226,12 +226,6 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
     /* Record CSP and MAC addresses of source */
     csp_eth_arp_set_addr(eth_frame->ether_shost, packet->id.src);
 
-    if (packet->id.dst != iface->addr && !ifdata->promisc) {
-        csp_eth_pbuf_free(ifdata, packet, true, task_woken);
-        (task_woken) ? csp_buffer_free_isr(packet) : csp_buffer_free(packet);
-        return CSP_ERR_NONE;
-    }
-
     csp_qfifo_write(packet, iface, task_woken);
 
     return CSP_ERR_NONE;

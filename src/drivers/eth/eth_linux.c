@@ -67,7 +67,7 @@ void * csp_eth_rx_loop(void * param) {
 
 static uint8_t csp_eth_tx_buffer[CSP_ETH_BUF_SIZE];
 
-int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int node_id, bool promisc, csp_iface_t ** return_iface) {
+int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int node_id, csp_iface_t ** return_iface) {
 
 	eth_context_t * ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL) {
@@ -82,7 +82,6 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
 	ctx->ifdata.iface.addr = node_id;
 	ctx->ifdata.iface.driver_data = ctx;
     ctx->ifdata.iface.interface_data = &ctx->ifdata;
-    ctx->ifdata.promisc = promisc;
 
     /* Ether header 14 byte, seg header 4 byte, CSP header 6 byte */
     if (mtu < 24) {

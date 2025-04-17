@@ -18,12 +18,10 @@
  * @param[in] ifname ifname CSP interface name.
  * @param[in] mtu MTU for the transmitted ethernet frames.
  * @param[in] node_id CSP address of the interface.
- * @param[in] promisc if true, receive all CAN frames. If false a filter
- *                    is set before forwarding packets to the router
  * @param[out] return_iface the added interface.
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int node_id, bool promisc, csp_iface_t ** return_iface);
+int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int node_id, csp_iface_t ** return_iface);
 
 /**
  * Transmit an CSP ethernet frame

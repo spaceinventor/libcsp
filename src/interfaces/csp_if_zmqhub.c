@@ -218,7 +218,7 @@ int csp_zmqhub_init_w_name_endpoints_rxfilter(const char * ifname, uint16_t addr
 	return CSP_ERR_NONE;
 }
 
-int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport) {
+int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, uint8_t broadcast_size, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport) {
 	
 	char pub[100];
 	csp_zmqhub_make_endpoint(host, subport, pub, sizeof(pub));
@@ -235,8 +235,15 @@ int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t add
 		ifname = CSP_ZMQHUB_IF_NAME;
 	}
 
+	if (broadcast_size == 0) {
+		broadcast_size = 1;
+	}
+
 	strncpy(drv->name, ifname, sizeof(drv->name) - 1);
 	drv->iface.name = drv->name;
+	drv->iface.addr = addr;
+	drv->iface.netmask = netmask;
+	drv->iface.broadcast_size = broadcast_size;
 	drv->iface.driver_data = drv;
 	drv->iface.nexthop = csp_zmqhub_tx;
 
@@ -304,17 +311,21 @@ int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t add
 	} else {
 
 		/* This needs to be static, because ZMQ does not copy the filter value to the
-		 * outgoing packet for each setsockopt call */
-		static uint16_t filt[4][3];
+		 * outgoing packet for each setsockopt call 
+		 * One entry is reserved for local node, one for global broadcast and one per local broadcast */
+		static uint16_t filt[4][6];
+		assert(broadcast_size <= 4); // A maximum of four local broadcast addresses are supported due to the filt array size
 
 		for (int i = 0; i < 4; i++) {
-			//int i = CSP_PRIO_NORM;
 			filt[i][0] = __builtin_bswap16((i << 14) | addr);
-			filt[i][1] = __builtin_bswap16((i << 14) | addr | hostmask);
-			filt[i][2] = __builtin_bswap16((i << 14) | 16383);
+			filt[i][1] = __builtin_bswap16((i << 14) | 16383);
 			ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, &filt[i][0], 2);
 			ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, &filt[i][1], 2);
-			ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, &filt[i][2], 2);
+
+			for (int j = 0; j < broadcast_size; j++) {
+				filt[i][j + 2] = __builtin_bswap16((i << 14) | (addr | (hostmask - j)));
+				ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, &filt[i][j+2], 2);
+			}
 		}
 
 	} 

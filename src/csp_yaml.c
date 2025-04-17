@@ -54,6 +54,12 @@ static void csp_yaml_end_if(struct data_s * data, unsigned int * dfl_addr) {
 		}
 	}
 
+	int netmask = atoi(data->netmask);
+
+	if (netmask == 0) {
+		netmask = 8;
+	}
+
 	/* UART */
     if (strcmp(data->driver, "kiss") == 0) {
 
@@ -127,7 +133,7 @@ static void csp_yaml_end_if(struct data_s * data, unsigned int * dfl_addr) {
 			promisc = (strcmp("true", data->promisc) == 0) ? 1 : 0;
 		}
 
-		csp_zmqhub_init_filter2(data->name, data->server, addr, atoi(data->netmask), promisc, &iface, NULL, CSP_ZMQPROXY_SUBSCRIBE_PORT, CSP_ZMQPROXY_PUBLISH_PORT);
+		csp_zmqhub_init_filter2(data->name, data->server, addr, atoi(data->netmask), 1, promisc, &iface, NULL, CSP_ZMQPROXY_SUBSCRIBE_PORT, CSP_ZMQPROXY_PUBLISH_PORT);
 
 	}
 #endif
@@ -142,7 +148,7 @@ static void csp_yaml_end_if(struct data_s * data, unsigned int * dfl_addr) {
 			return;
 		}
 
-		int error = csp_can_socketcan_open_and_add_interface(data->device, data->name, addr, 1000000, true, &iface);
+		int error = csp_can_socketcan_open_and_add_interface(data->device, data->name, addr, netmask, 1, 1000000, true, &iface);
 		if (error != CSP_ERR_NONE) {
 			csp_print("failed to add CAN interface [%s], error: %d", data->device, error);
 			return;
@@ -157,8 +163,6 @@ static void csp_yaml_end_if(struct data_s * data, unsigned int * dfl_addr) {
         return;
     }
 
-	iface->addr = addr;
-	iface->netmask = atoi(data->netmask);
 	iface->name = strdup(data->name);
 	iface->is_default = (data->is_dfl) ? 1 : 0;
 
