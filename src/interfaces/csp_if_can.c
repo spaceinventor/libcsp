@@ -87,8 +87,6 @@ int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t 
 			memcpy(packet->frame_begin, data, sizeof(uint32_t));
 			packet->frame_length += sizeof(uint32_t);
 
-			csp_id_strip(packet);
-
 			/* Copy CSP length (of data) */
 			memcpy(&(packet->length), data + sizeof(uint32_t), sizeof(packet->length));
 			packet->length = be16toh(packet->length);
@@ -140,6 +138,11 @@ int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t 
 			if (packet->rx_count != packet->length)
 				break;
 
+			/* Length information is packed differently for CAN */
+			uint16_t length = packet->length;
+			csp_id_strip(packet);
+			packet->length = length;
+
 			/* Rewrite incoming L2 broadcast to local node */
 			if (packet->id.dst == 0x1F) {
 				packet->id.dst = iface->addr;
@@ -147,9 +150,6 @@ int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t 
 
 			/* Free packet buffer */
 			csp_can_pbuf_free(ifdata, packet, 0, task_woken);
-
-            /* Clear timestamp_rx for L3 as L2 last_used is not needed anymore */
-            packet->timestamp_rx = 0;
 
 			/* Data is available */
 			csp_qfifo_write(packet, iface, task_woken);
