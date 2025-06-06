@@ -141,6 +141,7 @@ void * csp_buffer_clone(void * buffer) {
 	if (clone) {
 		size_t size = sizeof(csp_packet_t) - CSP_BUFFER_SIZE + packet->length;
 		memcpy(clone, packet, size > sizeof(csp_packet_t) ? sizeof(csp_packet_t) : size);
+		clone->frame_begin = (clone->header + CSP_PACKET_PADDING_BYTES) - (packet->data - packet->frame_begin);
 	}
 
 	return clone;
