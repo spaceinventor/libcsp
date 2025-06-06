@@ -4,7 +4,9 @@
 #include <csp/csp_id.h>
 #include <csp/csp_interface.h>
 #include <csp/interfaces/csp_if_eth.h>
-#include <csp/interfaces/csp_if_eth_pbuf.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #include <arpa/inet.h>
 #include <linux/if_packet.h>
@@ -55,7 +57,7 @@ void * csp_eth_rx_loop(void * param) {
 
     while(1) {
 
-        /* Receive packet segment */ 
+        /* Receive packet segment */
 
         uint32_t received_len = recvfrom(ctx->sockfd, recvbuf, CSP_ETH_BUF_SIZE, 0, NULL, NULL);
 
@@ -73,7 +75,7 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
 	if (ctx == NULL) {
 		return CSP_ERR_NOMEM;
 	}
-	
+
 	strcpy(ctx->name, ifname);
 	ctx->ifdata.iface.name = ctx->name;
     ctx->ifdata.tx_func = &csp_eth_tx_frame;
@@ -125,7 +127,7 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
 
     memcpy(&ctx->ifdata.if_mac, if_mac.ifr_hwaddr.sa_data, sizeof(ctx->ifdata.if_mac));
 
-    csp_print("INIT %s %s idx %d node %d mac %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", 
+    csp_print("INIT %s %s idx %d node %d mac %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n",
         ifname, device, ctx->if_idx.ifr_ifindex, node_id,
         ((uint8_t *)if_mac.ifr_hwaddr.sa_data)[0],
         ((uint8_t *)if_mac.ifr_hwaddr.sa_data)[1],

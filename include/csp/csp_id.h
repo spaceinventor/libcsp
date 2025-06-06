@@ -15,6 +15,8 @@ unsigned int csp_id_get_max_port(void);
 
 int csp_id_is_broadcast(uint16_t addr, csp_iface_t * iface);
 
+int csp_id_get_header_size(void);
+
 #ifdef __cplusplus
 }
 #endif
