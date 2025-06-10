@@ -69,6 +69,9 @@ csp_packet_t * csp_pbuf_new(csp_packet_t ** pbufs, uint32_t id, int * task_woken
 	uint32_t now = (task_woken) ? csp_get_ms_isr() : csp_get_ms();
 
 	csp_packet_t * packet = (task_woken) ? csp_buffer_get_isr(0) : csp_buffer_get(0);
+	if(packet == NULL) {
+		return NULL;
+	}
 
 	packet->last_used = now;
 	packet->cfpid = id;
