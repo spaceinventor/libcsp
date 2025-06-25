@@ -42,6 +42,7 @@ void csp_init(void) {
 
 	/* Loopback */
 	csp_if_lo.netmask = csp_id_get_host_bits();
+	csp_if_lo.addr = 2;
 	csp_iflist_add(&csp_if_lo);
 
 }
