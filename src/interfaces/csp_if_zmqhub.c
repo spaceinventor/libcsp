@@ -242,6 +242,7 @@ void csp_zmqhub_remove_filters(csp_iface_t * zmq_iface) {
 	/* subscribe to all packets - no filter */
 	ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, NULL, 0);
 	assert(ret == 0);
+	(void)ret;
 }
 
 void csp_zmqhub_add_filters(csp_iface_t * zmq_iface) {
@@ -266,6 +267,7 @@ void csp_zmqhub_add_filters(csp_iface_t * zmq_iface) {
 		ret = zmq_setsockopt(drv->subscriber, ZMQ_SUBSCRIBE, &drv->filt[i][2], 2);
 	}
 	assert(ret == 0);
+	(void)ret;
 }
 
 int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport) {
