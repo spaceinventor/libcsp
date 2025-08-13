@@ -123,6 +123,10 @@ int csp_zmqhub_init_w_name_endpoints_rxfilter(const char * ifname, uint16_t addr
 int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t addr, uint16_t netmask, int promisc, csp_iface_t ** return_interface, char * sec_key, uint16_t subport, uint16_t pubport);
 
 
+void csp_zmqhub_remove_filters(csp_iface_t * zmq_iface);
+void csp_zmqhub_add_filters(csp_iface_t * zmq_iface);
+
+
 #ifdef __cplusplus
 }
 #endif
