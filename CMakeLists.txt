@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(CSP VERSION 2.1)
+project(CSP VERSION 2.2)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(DEFAULT_BUILD_SHARED_LIBS ON)
