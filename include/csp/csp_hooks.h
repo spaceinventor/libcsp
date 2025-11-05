@@ -28,7 +28,7 @@ int csp_crypto_decrypt(uint8_t * ciphertext_in, uint8_t ciphertext_len, uint8_t 
 int csp_crypto_encrypt(uint8_t * msg_begin, uint8_t msg_len, uint8_t * ciphertext_out);     // Returns length of encrypted data
 
 void csp_clock_get_time(csp_timestamp_t * time);
-int csp_clock_set_time(const csp_timestamp_t * time);
+int csp_clock_set_time(const csp_timestamp_t * time, uint64_t rx_timestamp);
 
 #ifdef __cplusplus
 }
