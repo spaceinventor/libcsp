@@ -13,6 +13,7 @@
 #include <csp/csp.h>
 #include <csp/csp_id.h>
 #include <csp/csp_interface.h>
+#include <csp/arch/csp_time.h>
 
 
 /**
@@ -129,7 +130,7 @@ void csp_eth_arp_get_addr(uint8_t * mac_addr, uint16_t csp_addr)
     memset(mac_addr, 0xff, CSP_ETH_ALEN);
 }
 
-int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken) {
+int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken, uint64_t timestamp) {
 
 	csp_eth_interface_data_t * ifdata = iface->interface_data;
 
@@ -231,6 +232,8 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         (task_woken) ? csp_buffer_free_isr(packet) : csp_buffer_free(packet);
         return CSP_ERR_NONE;
     }
+
+    packet->timestamp = timestamp;
 
     csp_qfifo_write(packet, iface, task_woken);
 

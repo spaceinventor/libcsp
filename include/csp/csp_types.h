@@ -140,6 +140,7 @@ typedef struct csp_packet_s {
 
 	uint16_t length;			/*< Data length */
 	csp_id_t id;				/*< CSP id (unpacked version CPU readable) */
+	uint64_t timestamp;         /*< Timestamp in ns for (the first received fragment of) the frame */
 
 	struct csp_packet_s * next; /*< Used for lists / queues of packets */
 

@@ -145,4 +145,4 @@ int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fro
  * @param[out] pxTaskWoken Valid reference if called from ISR, otherwise NULL!
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken);
+int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken, uint64_t timestamp);

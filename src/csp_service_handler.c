@@ -11,6 +11,9 @@
 #include <csp/csp_id.h>
 #include <csp/arch/csp_time.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+
 /**
  * The CSP CMP mempy function is used to, override the function used to
  * read/write memory by peek and poke.
@@ -172,7 +175,7 @@ static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 	return CSP_ERR_NONE;
 }
 
-static int do_cmp_clock(struct csp_cmp_message * cmp) {
+static int do_cmp_clock(struct csp_cmp_message * cmp, uint64_t packet_timestamp) {
 
 	csp_timestamp_t clock;
 	clock.tv_sec = be32toh(cmp->clock.tv_sec);
@@ -181,7 +184,7 @@ static int do_cmp_clock(struct csp_cmp_message * cmp) {
 	int res = CSP_ERR_NONE;
 	if (clock.tv_sec != 0) {
 		// set time
-		res = csp_clock_set_time(&clock);
+		res = csp_clock_set_time(&clock, packet_timestamp);
 		if (res != CSP_ERR_NONE) {
 			csp_dbg_errno = CSP_DBG_ERR_CLOCK_SET_FAIL;
 		}
@@ -243,7 +246,7 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 			break;
 
 		case CSP_CMP_CLOCK:
-			ret = do_cmp_clock(cmp);
+			ret = do_cmp_clock(cmp, packet->timestamp);
 			break;
 
 		default:
@@ -268,9 +271,11 @@ void csp_service_handler(csp_packet_t * packet) {
 			}
 			break;
 
-		case CSP_PING:
+		case CSP_PING: {
 			/* A ping means, just echo the packet, so no changes */
+			printf("Packet TS: %"PRIu64"\n", packet->timestamp);
 			break;
+		}
 
 		case CSP_PS: {
 			packet->length = csp_ps_hook(packet);
