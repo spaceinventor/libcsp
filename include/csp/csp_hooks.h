@@ -97,7 +97,7 @@ void csp_clock_get_time(csp_timestamp_t * time);
  * @param time   Structure containing the new time to set
  * @return       0 on success, -1 on failure
  */
-int csp_clock_set_time(const csp_timestamp_t * time);
+int csp_clock_set_time(const csp_timestamp_t * time, uint64_t rx_timestamp);
 
 #ifdef __cplusplus
 }

@@ -260,7 +260,7 @@ static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	return CSP_ERR_NONE;
 }
 
-static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken) {
+static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken, uint64_t can_timestamp) {
 
 	csp_can_interface_data_t * ifdata = iface->interface_data;
 
@@ -275,9 +275,10 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 		}
 	}
 
-
 	/* BEGIN */
 	if (id & (CFP2_BEGIN_MASK << CFP2_BEGIN_OFFSET)) {
+
+		packet->timestamp = can_timestamp;
 
 		/* Discard packet if DLC is less than CSP id + CSP length fields */
 		if (dlc < 4) {
@@ -496,10 +497,10 @@ int csp_can_remove_interface(csp_iface_t * iface) {
 	return CSP_ERR_NONE;
 }
 
-int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken) {
+int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken, uint64_t timestamp) {
 	if (csp_conf.version == 1) {
 		return csp_can1_rx(iface, id, data, dlc, task_woken);
 	} else {
-		return csp_can2_rx(iface, id, data, dlc, task_woken);
+		return csp_can2_rx(iface, id, data, dlc, task_woken, timestamp);
 	}
 }
