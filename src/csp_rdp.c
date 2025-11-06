@@ -167,7 +167,7 @@ static int csp_rdp_send_cmp(csp_conn_t * conn, csp_packet_t * packet, int flags,
 					 packet->length, (unsigned int)(packet->length - sizeof(rdp_header_t)));
 
 	/* Send packet to IF */
-	csp_send_direct(&idout, packet, NULL);
+	csp_send_direct(&idout, packet, NULL, NULL);
 
 
 	return CSP_ERR_NONE;
@@ -403,7 +403,7 @@ void csp_rdp_check_timeouts(csp_conn_t * conn) {
 				/* Send copy to tx_queue */
 				packet->timestamp_tx = csp_get_ms();
 				csp_buffer_copy(packet, new_packet);
-				csp_send_direct(&conn->idout, new_packet, NULL);
+				csp_send_direct(&conn->idout, new_packet, NULL, NULL);
 			} else {
 				csp_rdp_error("RDP %p: Failed to allocate packet buffer\n", (void *)conn);
 			}
