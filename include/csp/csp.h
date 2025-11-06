@@ -107,6 +107,16 @@ csp_packet_t *csp_read(csp_conn_t *conn, uint32_t timeout);
 void csp_send(csp_conn_t *conn, csp_packet_t *packet);
 
 /**
+ * Send packet on a connection, and get the TX timestamp.
+ * The packet buffer is automatically freed, and cannot be used after the call to csp_send_with_timestamp()
+ *
+ * @param[in] conn connection
+ * @param[in] packet packet to send
+ * @param[out] tx_timestamp pointer to variable to receive the TX timestamp in nanoseconds, or NULL if not needed.
+ */
+void csp_send_and_get_timestamp(csp_conn_t *conn, csp_packet_t *packet, uint64_t *tx_timestamp);
+
+/**
  * Change the default priority of the connection and send a packet.
  *
  * .. note:: The priority of the connection will be changed.
@@ -136,6 +146,26 @@ void csp_send_prio(uint8_t prio, csp_conn_t *conn, csp_packet_t *packet);
 *   int: 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
 */
 int csp_transaction_w_opts(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, void *outbuf, int outlen, void *inbuf, int inlen, uint32_t opts);
+
+
+/**
+ * Perform an entire request & reply transaction. Also returns the RX timestamp of the reply.
+ * Creates a connection, send \a outbuf, wait for reply, copy reply to \a inbuf and close the connection.
+ *
+ * @param[in] prio priority, see #csp_prio_t
+ * @param[in] dst destination address
+ * @param[in] dst_port destination port
+ * @param[in] timeout timeout in mS to wait for a reply
+ * @param[in] outbuf outgoing data (request)
+ * @param[in] outlen length of data in \a outbuf (request)
+ * @param[out] inbuf user provided buffer for receiving data (reply)
+ * @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
+ * @param[in] opts connection options, see @ref CSP_CONNECTION_OPTIONS.
+ *
+ * Returns:
+ *   int: 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
+ */
+int csp_transaction_w_opts_timestamped(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, void *outbuf, int outlen, void *inbuf, int inlen, uint32_t opts, uint64_t *timestamp);
 
 /**
  * Perform an entire request & reply transaction.
@@ -167,7 +197,7 @@ static inline int csp_transaction(uint8_t prio, uint16_t dest, uint8_t port, uin
  * @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
  * @return 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
  */
-int csp_transaction_persistent(csp_conn_t *conn, uint32_t timeout, void *outbuf, int outlen, void *inbuf, int inlen);
+int csp_transaction_persistet(csp_conn_t *conn, uint32_t timeout, void *outbuf, int outlen, void *inbuf, int inlen);
 
 /**
  * Read data from a connection-less server socket.
@@ -420,6 +450,16 @@ void csp_buf_free(uint16_t node, uint32_t timeout);
  *
  */
 void csp_reboot(uint16_t node);
+
+/** 
+ * Synchronize time with the specified node.
+ *
+ * @param[in] node address of subsystem.
+ * @param[in] time_to_set time to set on the remote subsystem.
+ *
+ * @return #CSP_ERR_NONE on success, otherwise an error code.
+ */
+int csp_sync_time(uint16_t node);
 
 /**
  * Shutdown subsystem.

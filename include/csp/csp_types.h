@@ -33,6 +33,7 @@ typedef enum {
 	CSP_REBOOT			= 4,   /*< Reboot, see #CSP_REBOOT_MAGIC and #CSP_REBOOT_SHUTDOWN_MAGIC */
 	CSP_BUF_FREE		= 5,   /*< Free CSP buffers */
 	CSP_UPTIME			= 6,   /*< Uptime */
+	CSP_TIME_SYNC       = 7,   /*< Time synchronization */
 } csp_service_port_t;
 
 /** Listen on all ports, primarily used with csp_bind() */
@@ -220,6 +221,16 @@ typedef csp_memptr64_t (*csp_memwrite64_fnc_t)(csp_memptr64_t, csp_memptr_t, siz
  * Compile check/asserts.
  */
 #define CSP_STATIC_ASSERT(condition, name)   typedef char name[(condition) ? 1 : -1]
+
+/**
+ * Time sync packet format
+ */
+typedef struct {
+	uint32_t id;
+	uint32_t tv_sec;
+	uint32_t tv_nsec;
+	uint8_t correction;
+} csp_time_sync_t;
 
 #ifdef __cplusplus
 }

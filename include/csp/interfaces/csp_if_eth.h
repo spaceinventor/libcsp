@@ -83,7 +83,7 @@ typedef struct csp_eth_header_s
  * @param[in] eth_frame CSP Ethernet frame to transmit
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-typedef int (*csp_eth_driver_tx_t)(void * driver_data, csp_eth_header_t * eth_frame);
+typedef int (*csp_eth_driver_tx_t)(void * driver_data, csp_eth_header_t * eth_frame, uint64_t * timestamp);
 
 /**
  * CSP Interface data.
@@ -130,7 +130,7 @@ void csp_eth_arp_get_addr(uint8_t * mac_addr, uint16_t csp_addr);
  *
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me);
+int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp);
 
 /**
  * Process received CSP ethernet frame.

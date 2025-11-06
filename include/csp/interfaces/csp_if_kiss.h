@@ -62,7 +62,7 @@ int csp_kiss_add_interface(csp_iface_t * iface);
  *
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_kiss_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me);
+int csp_kiss_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp);
 
 /**
  * Process received CAN frame.

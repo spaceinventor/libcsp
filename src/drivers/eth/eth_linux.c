@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <errno.h>
 
 #include <csp/csp.h>
 #include <csp/csp_id.h>
@@ -10,6 +11,9 @@
 #include <linux/if_packet.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <linux/errqueue.h>
+#include <linux/net_tstamp.h>
+#include <linux/sockios.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -27,7 +31,7 @@ typedef struct {
     struct ifreq if_idx;
 } eth_context_t;
 
-int csp_eth_tx_frame(void * driver_data, csp_eth_header_t *eth_frame) {
+int csp_eth_tx_frame(void * driver_data, csp_eth_header_t *eth_frame, uint64_t * timestamp) {
 
     const eth_context_t * ctx = (eth_context_t*)driver_data;
 
@@ -39,8 +43,67 @@ int csp_eth_tx_frame(void * driver_data, csp_eth_header_t *eth_frame) {
 
     uint32_t txsize = sizeof(csp_eth_header_t) + be16toh(eth_frame->seg_size);
 
-    if (sendto(ctx->sockfd, (void*)eth_frame, txsize, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
+    /* Setup sendmsg for TX timestamping */
+    struct iovec iov = {
+        .iov_base = eth_frame,
+        .iov_len = txsize
+    };
+
+    struct msghdr msg = {
+        .msg_name = &socket_address,
+        .msg_namelen = sizeof(struct sockaddr_ll),
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = NULL,
+        .msg_controllen = 0,
+        .msg_flags = 0
+    };
+
+    if (sendmsg(ctx->sockfd, &msg, 0) < 0) {
         return CSP_ERR_DRIVER;
+    }
+
+    /* Retrieve TX timestamp from error queue */
+    char control[CMSG_SPACE(sizeof(struct scm_timestamping))];
+    char data[CSP_ETH_BUF_SIZE];
+    struct iovec iov_err = {
+        .iov_base = data,
+        .iov_len = sizeof(data)
+    };
+
+    struct msghdr msg_err = {
+        .msg_name = NULL,
+        .msg_namelen = 0,
+        .msg_iov = &iov_err,
+        .msg_iovlen = 1,
+        .msg_control = control,
+        .msg_controllen = sizeof(control),
+        .msg_flags = 0
+    };
+
+    /* Try to get TX timestamp (non-blocking) */
+    int err_result = recvmsg(ctx->sockfd, &msg_err, MSG_ERRQUEUE | MSG_DONTWAIT);
+    if (err_result >= 0) {
+        for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg_err); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg_err, cmsg)) {
+            if (eth_debug) {
+                csp_print("TX cmsg: level=%d type=%d\n", cmsg->cmsg_level, cmsg->cmsg_type);
+            }
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+                struct scm_timestamping *ts_data = (struct scm_timestamping *)CMSG_DATA(cmsg);
+                uint64_t tx_timestamp = 0;
+                /* Try hardware timestamp first (ts[2]), then software (ts[0]) */
+                tx_timestamp = (uint64_t)ts_data->ts[0].tv_sec * 1000000000ULL + (uint64_t)ts_data->ts[0].tv_nsec;
+                if (eth_debug) {
+                    csp_print("TX SW timestamp: %llu ns\n", tx_timestamp);
+                }
+                if (timestamp && tx_timestamp) {
+                    *timestamp = tx_timestamp;
+                }
+                break;
+            }
+        }
+    } else if (eth_debug) {
+        csp_print("TX: No timestamp from error queue (errno=%d)\n", errno);
     }
 
     return CSP_ERR_NONE;
@@ -53,13 +116,59 @@ void * csp_eth_rx_loop(void * param) {
     static uint8_t recvbuf[CSP_ETH_BUF_SIZE];
     csp_eth_header_t * eth_frame = (csp_eth_header_t *)recvbuf;
 
+    uint64_t timestamp = 0;
+
+    /* Setup for recvmsg to receive timestamp */
+    struct iovec iov = {
+        .iov_base = recvbuf,
+        .iov_len = CSP_ETH_BUF_SIZE
+    };
+    
+    char control[CMSG_SPACE(sizeof(struct scm_timestamping))];
+    
+    struct msghdr msg = {
+        .msg_name = NULL,
+        .msg_namelen = 0,
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = control,
+        .msg_controllen = sizeof(control),
+        .msg_flags = 0
+    };
+
     while(1) {
 
-        /* Receive packet segment */ 
+        /* Receive packet segment with timestamp */ 
+        int32_t received_len = recvmsg(ctx->sockfd, &msg, 0);
+        
+        if (received_len < 0) {
+            continue;
+        }
 
-        uint32_t received_len = recvfrom(ctx->sockfd, recvbuf, CSP_ETH_BUF_SIZE, 0, NULL, NULL);
+        /* Extract timestamp from control message */
+        timestamp = 0;
+        for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+            if (eth_debug) {
+                csp_print("RX cmsg: level=%d type=%d\n", cmsg->cmsg_level, cmsg->cmsg_type);
+            }
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_TIMESTAMPING) {
+                struct scm_timestamping *ts_data = (struct scm_timestamping *)CMSG_DATA(cmsg);
+                /* Try hardware timestamp first (ts[2]), then software (ts[0]) */
+                if (ts_data->ts[0].tv_sec || ts_data->ts[0].tv_nsec) {
+                    timestamp = (uint64_t)ts_data->ts[0].tv_sec * 1000000000ULL + (uint64_t)ts_data->ts[0].tv_nsec;
+                    if (eth_debug) {
+                        csp_print("RX SW timestamp: %llu ns\n", timestamp);
+                    }
+                }
+                break;
+            }
+        }
+        
+        if (eth_debug && timestamp == 0) {
+            csp_print("RX: No timestamp received\n");
+        }
 
-        csp_eth_rx(&ctx->ifdata.iface, eth_frame, received_len, NULL);
+        csp_eth_rx(&ctx->ifdata.iface, eth_frame, received_len, NULL, timestamp);
     }
 
     return NULL;
@@ -140,6 +249,14 @@ int csp_eth_init(const char * device, const char * ifname, int mtu, unsigned int
         perror("setsockopt");
         close(ctx->sockfd);
         return CSP_ERR_INVAL;
+    }
+
+    // Enable TX timestamping
+    int ts_flags = SOF_TIMESTAMPING_TX_SOFTWARE | SOF_TIMESTAMPING_RX_SOFTWARE | SOF_TIMESTAMPING_SOFTWARE;
+    if (setsockopt(ctx->sockfd, SOL_SOCKET, SO_TIMESTAMPING, &ts_flags, sizeof(ts_flags)) == -1) {
+        perror("setsockopt SO_TIMESTAMPING");
+    } else {
+        csp_print("Using hardware timestamping on %s\n", device);
     }
 
     /* Bind to device */

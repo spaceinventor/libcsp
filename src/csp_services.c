@@ -98,6 +98,54 @@ void csp_shutdown(uint16_t node) {
 	csp_transaction_w_opts(CSP_PRIO_NORM, node, CSP_REBOOT, 0, &magic_word, sizeof(magic_word), NULL, 0, CSP_O_CRC32);
 }
 
+int csp_sync_time(uint16_t node) {
+
+	/* Prepare data */
+	csp_packet_t * packet = csp_buffer_get(0);
+	if (packet == NULL)
+		return -1;
+
+	/* Open connection */
+	csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, CSP_TIME_SYNC, 0, CSP_O_CRC32);
+	if (conn == NULL) {
+		csp_buffer_free(packet);
+		return -1;
+	}
+
+	csp_time_sync_t time_sync;
+	static uint32_t sync_id = 1;
+	time_sync.id = htobe32(sync_id++);
+	time_sync.tv_sec = 0;
+	time_sync.tv_nsec = 0;
+	time_sync.correction = 0;
+	packet->length = sizeof(time_sync);
+	memcpy(packet->data, &time_sync, sizeof(time_sync));
+
+	uint64_t tx_timestamp = 0;
+	csp_send_and_get_timestamp(conn, packet, &tx_timestamp);
+	if (tx_timestamp == 0) {
+		/* No timestamp available */
+		return -2;
+	}
+
+	packet = csp_buffer_get(0);
+	if (packet == NULL)
+		return -1;
+
+	time_sync.tv_sec = htobe32(tx_timestamp / (uint64_t)1E9);
+	time_sync.tv_nsec = htobe32(tx_timestamp % (uint64_t)1E9);
+	time_sync.correction = 1;
+
+	packet->length = sizeof(time_sync);
+	memcpy(packet->data, &time_sync, sizeof(time_sync));
+
+	csp_send(conn, packet);
+
+	csp_close(conn);
+
+	return CSP_ERR_NONE;
+}
+
 void csp_ps(uint16_t node, uint32_t timeout) {
 
 	/* Open connection */
@@ -215,6 +263,17 @@ int csp_cmp(uint16_t node, uint32_t timeout, uint8_t code, int msg_size, struct 
 	msg->type = CSP_CMP_REQUEST;
 	msg->code = code;
 	int status = csp_transaction_w_opts(CSP_PRIO_NORM, node, CSP_CMP, timeout, msg, msg_size, msg, msg_size, CSP_O_CRC32);
+	if (status == 0) {
+		return CSP_ERR_TIMEDOUT;
+	}
+
+	return CSP_ERR_NONE;
+}
+
+int csp_cmp_clock_with_rx_timestamp(uint16_t node, uint32_t timeout, struct csp_cmp_message * msg, uint64_t *rx_timestamp) {
+	msg->type = CSP_CMP_REQUEST;
+	msg->code = CSP_CMP_CLOCK;
+	int status = csp_transaction_w_opts_timestamped(CSP_PRIO_NORM, node, CSP_CMP, timeout, msg, CMP_SIZE(clock), msg, CMP_SIZE(clock), CSP_O_CRC32, rx_timestamp);
 	if (status == 0) {
 		return CSP_ERR_TIMEDOUT;
 	}

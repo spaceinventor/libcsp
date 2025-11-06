@@ -175,7 +175,7 @@ static int do_cmp_poke_v2(struct csp_cmp_message * cmp) {
 	return CSP_ERR_NONE;
 }
 
-static int do_cmp_clock(struct csp_cmp_message * cmp, uint64_t packet_timestamp) {
+static int do_cmp_clock(struct csp_cmp_message * cmp) {
 
 	csp_timestamp_t clock;
 	clock.tv_sec = be32toh(cmp->clock.tv_sec);
@@ -184,7 +184,7 @@ static int do_cmp_clock(struct csp_cmp_message * cmp, uint64_t packet_timestamp)
 	int res = CSP_ERR_NONE;
 	if (clock.tv_sec != 0) {
 		// set time
-		res = csp_clock_set_time(&clock, packet_timestamp);
+		res = csp_clock_set_time(&clock, 0);
 		if (res != CSP_ERR_NONE) {
 			csp_dbg_errno = CSP_DBG_ERR_CLOCK_SET_FAIL;
 		}
@@ -246,7 +246,7 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 			break;
 
 		case CSP_CMP_CLOCK:
-			ret = do_cmp_clock(cmp, packet->timestamp);
+			ret = do_cmp_clock(cmp);
 			break;
 
 		default:
@@ -273,7 +273,6 @@ void csp_service_handler(csp_packet_t * packet) {
 
 		case CSP_PING: {
 			/* A ping means, just echo the packet, so no changes */
-			printf("Packet TS: %"PRIu64"\n", packet->timestamp);
 			break;
 		}
 
@@ -327,6 +326,38 @@ void csp_service_handler(csp_packet_t * packet) {
 			time = htobe32(time);
 			memcpy(packet->data, &time, sizeof(time));
 			packet->length = sizeof(time);
+			break;
+		}
+
+		case CSP_TIME_SYNC: {
+			static uint32_t last_sync_id = 0;
+			static uint64_t last_sync_rx = 0;
+
+			/* Get time from packet */
+			csp_time_sync_t time_sync;
+			memcpy(&time_sync, packet->data, sizeof(csp_time_sync_t));
+
+			uint32_t id = be32toh(time_sync.id);
+
+			if (id == last_sync_id && last_sync_rx > 0 && time_sync.correction) {
+				csp_timestamp_t now_ts;
+				now_ts.tv_sec = be32toh(time_sync.tv_sec);
+				now_ts.tv_nsec = be32toh(time_sync.tv_nsec);
+
+				csp_clock_set_time(&now_ts, last_sync_rx);
+			} else {
+				/* Save sync info */
+				last_sync_id = id;
+				last_sync_rx = packet->timestamp;
+			}
+
+			printf("Time sync packet received: id=%"PRIu32", sec=%"PRIu32", nsec=%"PRIu32", correction=%d\n",
+				id,
+				be32toh(time_sync.tv_sec),
+				be32toh(time_sync.tv_nsec),
+				time_sync.correction);
+
+			csp_buffer_free(packet);
 			break;
 		}
 
