@@ -7,6 +7,7 @@
 #include <csp/csp_cmp.h>
 #include <endian.h>
 #include <csp/arch/csp_time.h>
+#include <csp/csp_hooks.h>
 
 int csp_ping(uint16_t node, uint32_t timeout, unsigned int size, uint8_t conn_options) {
 
@@ -121,11 +122,15 @@ int csp_sync_time(uint16_t node) {
 	packet->length = sizeof(time_sync);
 	memcpy(packet->data, &time_sync, sizeof(time_sync));
 
+	csp_timestamp_t fallback_ts;
+	csp_clock_get_time(&fallback_ts);
+
 	uint64_t tx_timestamp = 0;
 	csp_send_and_get_timestamp(conn, packet, &tx_timestamp);
 	if (tx_timestamp == 0) {
 		/* No timestamp available */
-		return -2;
+		csp_print("Warning: No TX timestamp available when syncing time to node %u, using local clock as fallback\n", node);
+		tx_timestamp = ((uint64_t)fallback_ts.tv_sec * (uint64_t)1E9) + (uint64_t)fallback_ts.tv_nsec;
 	}
 
 	packet = csp_buffer_get(0);
