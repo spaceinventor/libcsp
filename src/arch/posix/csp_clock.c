@@ -15,7 +15,7 @@ __weak void csp_clock_get_time(csp_timestamp_t * time) {
 	}
 }
 
-__weak int csp_clock_set_time(const csp_timestamp_t * time) {
+__weak int csp_clock_set_time(const csp_timestamp_t * time, uint64_t rx_timestamp) {
 
 	struct timespec ts = {.tv_sec = time->tv_sec, .tv_nsec = time->tv_nsec};
 	if (clock_settime(CLOCK_REALTIME, &ts) == 0) {
