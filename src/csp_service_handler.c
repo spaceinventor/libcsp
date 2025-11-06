@@ -273,6 +273,7 @@ void csp_service_handler(csp_packet_t * packet) {
 
 		case CSP_PING: {
 			/* A ping means, just echo the packet, so no changes */
+			// printf("Packet TS: %"PRIu64"\n", packet->timestamp);
 			break;
 		}
 
@@ -350,12 +351,6 @@ void csp_service_handler(csp_packet_t * packet) {
 				last_sync_id = id;
 				last_sync_rx = packet->timestamp;
 			}
-
-			printf("Time sync packet received: id=%"PRIu32", sec=%"PRIu32", nsec=%"PRIu32", correction=%d\n",
-				id,
-				be32toh(time_sync.tv_sec),
-				be32toh(time_sync.tv_nsec),
-				time_sync.correction);
 
 			csp_buffer_free(packet);
 			break;
