@@ -253,6 +253,17 @@ static inline int csp_cmp_poke_v2(uint16_t node, uint32_t timeout, struct csp_cm
 	return csp_cmp(node, timeout, CSP_CMP_POKE_V2, CMP_SIZE(poke_v2) - sizeof(msg->poke_v2.data) + msg->poke_v2.len, msg);
 }
 
+/**
+ * Get clock from remote node.
+ *
+ *	@param[in] node address of subsystem.
+ *	@param[in] timeout timeout in mS to wait for reply..
+ *	@param[in,out] msg clock.
+ *  @param[out] rx_timestamp receive timestamp in nanoseconds.
+ *	@return #CSP_ERR_NONE on success, otherwise an error code.
+ */
+int csp_cmp_clock_with_rx_timestamp(uint16_t node, uint32_t timeout, struct csp_cmp_message * msg, uint64_t *rx_timestamp);
+
 #ifdef __cplusplus
 }
 #endif

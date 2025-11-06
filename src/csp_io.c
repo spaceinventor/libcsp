@@ -84,7 +84,7 @@ void csp_id_clear(csp_id_t * target) {
 	target->flags = 0;
 }
 
-void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * routed_from) {
+void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * routed_from, uint64_t *tx_timestamp) {
 
 	int from_me = (routed_from == NULL ? 1 : 0);
 
@@ -96,7 +96,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 
 	/* Quickly send on loopback */
 	if(idout->dst == csp_if_lo.addr){
-		csp_send_direct_iface(idout, packet, &csp_if_lo, via, from_me);
+		csp_send_direct_iface(idout, packet, &csp_if_lo, via, from_me, tx_timestamp);
 		return;
 	}
 
@@ -133,7 +133,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 		 * Is this even possible? */
 		copy = csp_buffer_clone(packet);
 		if (copy != NULL) {
-			csp_send_direct_iface(&_idout, copy, iface, via, from_me);
+			csp_send_direct_iface(&_idout, copy, iface, via, from_me, tx_timestamp);
 		}
 
 	}
@@ -170,7 +170,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 
 			copy = csp_buffer_clone(packet);
 			if (copy != NULL) {
-				csp_send_direct_iface(idout, copy, route->iface, route->via, from_me);
+				csp_send_direct_iface(idout, copy, route->iface, route->via, from_me, tx_timestamp);
 			}
 		} while ((route = csp_rtable_search_backward(route)) != NULL);
 	}
@@ -207,7 +207,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 		 * Is this even possible? */
 		copy = csp_buffer_clone(packet);
 		if (copy != NULL) {
-			csp_send_direct_iface(idout, copy, iface, via, from_me);
+			csp_send_direct_iface(idout, copy, iface, via, from_me, tx_timestamp);
 		}
 
 	}
@@ -222,7 +222,7 @@ __weak void csp_output_hook(csp_id_t * idout, csp_packet_t * packet, csp_iface_t
 	return;
 }
 
-void csp_send_direct_iface(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * iface, uint16_t via, int from_me) {
+void csp_send_direct_iface(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * iface, uint16_t via, int from_me, uint64_t *tx_timestamp) {
 
 	csp_output_hook(idout, packet, iface, via, from_me);
 
@@ -268,7 +268,7 @@ void csp_send_direct_iface(csp_id_t* idout, csp_packet_t * packet, csp_iface_t *
 	/* Store length before passing to interface */
 	uint16_t bytes = packet->length;
 
-	if ((*iface->nexthop)(iface, via, packet, from_me) != CSP_ERR_NONE)
+	if ((*iface->nexthop)(iface, via, packet, from_me, tx_timestamp) != CSP_ERR_NONE)
 		goto tx_err;
 
 	iface->tx++;
@@ -302,8 +302,21 @@ void csp_send(csp_conn_t * conn, csp_packet_t * packet) {
 	}
 #endif
 
-	csp_send_direct(&conn->idout, packet, NULL);
+	csp_send_direct(&conn->idout, packet, NULL, NULL);
+}
 
+void csp_send_and_get_timestamp(csp_conn_t * conn, csp_packet_t * packet, uint64_t *tx_timestamp) {
+
+	if (packet == NULL) {
+		return;
+	}
+
+	if ((conn == NULL) || (conn->state != CONN_OPEN)) {
+		csp_buffer_free(packet);
+		return;
+	}
+
+	csp_send_direct(&conn->idout, packet, NULL, tx_timestamp);
 }
 
 void csp_send_prio(uint8_t prio, csp_conn_t * conn, csp_packet_t * packet) {
@@ -311,7 +324,7 @@ void csp_send_prio(uint8_t prio, csp_conn_t * conn, csp_packet_t * packet) {
 	csp_send(conn, packet);
 }
 
-int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, void * outbuf, int outlen, void * inbuf, int inlen) {
+static int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, void * outbuf, int outlen, void * inbuf, int inlen, uint64_t *timestamp) {
 
 	if(outlen > CSP_BUFFER_SIZE){
 		return 0;
@@ -342,6 +355,10 @@ int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, void * outbu
 		return 0;
 	}
 
+	if (timestamp) {
+		*timestamp = packet->timestamp;
+	}
+
 	memcpy(inbuf, packet->data, packet->length);
 	int length = packet->length;
 	csp_buffer_free(packet);
@@ -354,7 +371,20 @@ int csp_transaction_w_opts(uint8_t prio, uint16_t dest, uint8_t port, uint32_t t
 	if (conn == NULL)
 		return 0;
 
-	int status = csp_transaction_persistent(conn, timeout, outbuf, outlen, inbuf, inlen);
+	int status = csp_transaction_persistent(conn, timeout, outbuf, outlen, inbuf, inlen, NULL);
+
+	csp_close(conn);
+
+	return status;
+}
+
+int csp_transaction_w_opts_timestamped(uint8_t prio, uint16_t dest, uint8_t port, uint32_t timeout, void * outbuf, int outlen, void * inbuf, int inlen, uint32_t opts, uint64_t *timestamp) {
+
+	csp_conn_t * conn = csp_connect(prio, dest, port, 0, opts);
+	if (conn == NULL)
+		return 0;
+
+	int status = csp_transaction_persistent(conn, timeout, outbuf, outlen, inbuf, inlen, timestamp);
 
 	csp_close(conn);
 
@@ -402,7 +432,7 @@ void csp_sendto(uint8_t prio, uint16_t dest, uint8_t dport, uint8_t src_port, ui
 	packet->id.sport = src_port;
 	packet->id.pri = prio;
 
-	csp_send_direct(&packet->id, packet, NULL);
+	csp_send_direct(&packet->id, packet, NULL, NULL);
 
 }
 
