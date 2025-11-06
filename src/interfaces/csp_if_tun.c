@@ -22,7 +22,7 @@ __weak int csp_crypto_encrypt(uint8_t * msg_begin, uint8_t msg_len, uint8_t * ci
 	return -1;
 }
 
-static int csp_if_tun_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+static int csp_if_tun_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)via;
 	(void)from_me;
