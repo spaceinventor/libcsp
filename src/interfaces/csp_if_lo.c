@@ -8,7 +8,7 @@
  * @param packet Packet to transmit
  * @return 1 if packet was successfully transmitted, 0 on error
  */
-static int csp_lo_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+static int csp_lo_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)iface;
 	(void)via;

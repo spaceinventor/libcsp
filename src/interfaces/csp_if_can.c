@@ -163,8 +163,9 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	return CSP_ERR_NONE;
 }
 
-static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
 	(void)from_me; /* Avoid compiler warnings about unused parameter */
+	(void)timestamp; /* Avoid compiler warnings about unused parameter */
 
 	/* Loopback */
 	if (packet->id.dst == iface->addr) {
@@ -365,10 +366,11 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	return CSP_ERR_NONE;
 }
 
-static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)via;
 	(void)from_me;
+	(void)timestamp;
 
 	/* Loopback */
 	if (packet->id.dst == iface->addr || csp_addr_is_alias(packet->id.dst)) {
