@@ -67,18 +67,12 @@ csp_c_args = ['-Wshadow',
 subdir('src')
 subdir('include/csp')
 
-if not meson.is_subproject()
-  install_subdir('include', install_dir : '.')
-  install_headers(csp_config_h, install_dir : 'include/csp')
-endif
-
-
 csp_lib = library('csp',
 	sources: [csp_sources, csp_config_h],
 	include_directories : csp_inc,
 	dependencies : csp_deps,
 	c_args : csp_c_args,
-	install : false,
+	install : true,
 	pic:true,
 )
 
@@ -89,6 +83,10 @@ csp_dep = declare_dependency(
 	link_with : csp_lib,
 	dependencies : csp_deps,
 )
+
+install_subdir('include', install_dir : '.', exclude_files: ['csp/meson.build'])
+pkg = import('pkgconfig')
+pkg.generate(csp_lib)
 
 subdir('examples')
 
