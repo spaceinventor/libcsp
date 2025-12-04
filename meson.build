@@ -83,8 +83,7 @@ csp_dep = declare_dependency(
 	link_with : csp_lib,
 	dependencies : csp_deps,
 )
-
-install_subdir('include', install_dir : '.', exclude_files: ['csp/meson.build'])
+install_subdir('include', install_dir : '.', exclude_files: ['csp/meson.build'], install_tag: 'devel')
 pkg = import('pkgconfig')
 pkg.generate(csp_lib)
 
