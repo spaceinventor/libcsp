@@ -85,16 +85,23 @@ void * csp_zmqhub_task(void * param) {
 			continue;
 		}
 
+		// Copy the data from zmq to csp
+		const uint8_t * rx_data = zmq_msg_data(&msg);
+
 		// Create new csp packet
-		packet = csp_buffer_get(0);
+		if (csp_iflist_get_by_addr(*((uint16_t*)&rx_data[2]) & 0x3FFF) != NULL) {
+			/* The packet is for us, make sure we don't silently ignore the situation if we can't process it */
+			packet = csp_buffer_get_always();
+		} else  {
+			/* The packet is not for us, it is ok to drop it if we don't have enough buffers*/
+			packet = csp_buffer_get(0);
+		}
+
 		if (packet == NULL) {
 			csp_print("RX %s: Failed to get csp_buffer(%u)\n", drv->iface.name, datalen);
 			zmq_msg_close(&msg);
 			continue;
 		}
-
-		// Copy the data from zmq to csp
-		const uint8_t * rx_data = zmq_msg_data(&msg);
 
 		csp_id_setup_rx(packet);
 
