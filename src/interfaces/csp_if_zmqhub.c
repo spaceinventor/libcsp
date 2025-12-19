@@ -291,7 +291,7 @@ int csp_zmqhub_init_filter2(const char * ifname, const char * host, uint16_t add
 	const ssize_t sec_key_len = sec_key ? strnlen(sec_key, CURVE_KEYLEN-1) : 0;
 	if (sec_key_len && sec_key_len != CURVE_KEYLEN-1) {
 		/* Is it bad to expose the detected length of the ZMQ key here? */
-		fprintf(stderr, "ZMQ secret key must be exactly 40 characters long (got %ld)\n", sec_key_len);
+		fprintf(stderr, "ZMQ secret key must be exactly 40 characters long (got %ld)\n", (signed long)sec_key_len);
 		return CSP_ERR_INVAL;
 	}
 
