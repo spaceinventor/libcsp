@@ -90,7 +90,7 @@ void csp_id_clear(csp_id_t * target) {
 	target->flags = 0;
 }
 
-static inline int is_same_subnet(csp_iface_t * iface, csp_iface_t * routed_from) {
+static int is_same_subnet(csp_iface_t * iface, csp_iface_t * routed_from) {
 
 	/* This check is is similar to that below, but faster */
 	if (iface == routed_from) { 
@@ -105,15 +105,15 @@ static inline int is_same_subnet(csp_iface_t * iface, csp_iface_t * routed_from)
 	return 0;
 }
 
-static inline void convert_broadcast(csp_id_t * idout, csp_id_t * idout_copy, csp_iface_t * snd_iface) {
+static void convert_broadcast(csp_id_t * idout, csp_id_t * idout_copy, csp_iface_t * snd_iface) {
 	
-	/* Rewrite routed broadcast (L3) to local (L2) when arriving at the interface */
+	/* Rewrite routed brodcast (L3) to local (L2) when arriving at the interface */
 	if (csp_id_is_broadcast(idout->dst, snd_iface)) {
 		idout_copy->dst = csp_id_get_max_nodeid();
 	}
 }
 
-static inline void send_packet(csp_id_t * idout_copy, csp_packet_t * snd_pkt, csp_iface_t * snd_iface, uint16_t via, int from_me) {
+static void send_packet(csp_id_t * idout_copy, csp_packet_t * snd_pkt, csp_iface_t * snd_iface, uint16_t via, int from_me) {
 
 	/* Apply outgoing interface address to packet */
 	if ((from_me) && (idout_copy->src == 0)) {
@@ -146,7 +146,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 
 		local_found = 1;
 
-		/* Do not send back to same interface (split horizon)  */
+		/* Do not send back to same inteface (split horizon)  */
 		if (is_same_subnet(iface, routed_from)) {
 			continue;
 		}
@@ -179,7 +179,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 		do {
 			route_found = 1;
 
-			/* Do not send back to same interface (split horizon)  */
+			/* Do not send back to same inteface (split horizon)  */
 			if (is_same_subnet(route->iface, routed_from)) {
 				continue;
 			}
