@@ -90,63 +90,84 @@ void csp_id_clear(csp_id_t * target) {
 	target->flags = 0;
 }
 
+static int is_same_subnet(csp_iface_t * iface, csp_iface_t * routed_from) {
+
+	/* This check is is similar to that below, but faster */
+	if (iface == routed_from) { 
+		return 1;
+	} 
+
+	/* Do not send to interface with similar subnet (split horizon) */
+	if (csp_iflist_is_within_subnet(iface->addr, routed_from)) { 
+		return 1;
+	}
+
+	return 0;
+}
+
+static void convert_broadcast(csp_id_t * idout, csp_id_t * idout_copy, csp_iface_t * snd_iface) {
+	
+	/* Rewrite routed brodcast (L3) to local (L2) when arriving at the interface */
+	if (csp_id_is_broadcast(idout->dst, snd_iface)) {
+		idout_copy->dst = csp_id_get_max_nodeid();
+	}
+}
+
+static void send_packet(csp_id_t * idout_copy, csp_packet_t * snd_pkt, csp_iface_t * snd_iface, uint16_t via, int from_me) {
+
+	/* Apply outgoing interface address to packet */
+	if ((from_me) && (idout_copy->src == 0)) {
+		idout_copy->src = snd_iface->addr;
+	}
+
+	if (snd_pkt != NULL) {
+		csp_send_direct_iface(idout_copy, snd_pkt, snd_iface, via, from_me);
+	}
+}
+
 void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * routed_from) {
 
 	int from_me = (routed_from == NULL ? 1 : 0);
-
-	/* Try to find the destination on any local subnets */
 	int via = CSP_NO_VIA_ADDRESS;
-	csp_iface_t * iface = NULL;
-	csp_packet_t * copy = NULL;
-	int local_found = 0;
 
 	/* Quickly send on loopback */
-	if(idout->dst == csp_if_lo.addr){
+	if (idout->dst == csp_if_lo.addr) {
 		csp_send_direct_iface(idout, packet, &csp_if_lo, via, from_me);
 		return;
 	}
 
-	/* Make copy as broadcast modifies destination making iflist_get_by_subnet the skip next redundant ifaces */
-	csp_id_t _idout = *idout;
+	csp_id_t idout_copy = *idout; /* Broadcast function procedure modifies destination */
+	csp_iface_t * iface = NULL; /* Interface iterator */
+	csp_iface_t * next_iface = NULL; /* Reference to keep track of packet copying */
 
+	/* Try to find the destination on any local subnets */
+	int local_found = 0;
 	while ((iface = csp_iflist_get_by_subnet(idout->dst, iface)) != NULL) {
 
 		local_found = 1;
 
-		/* Do not send back to same interface (split horizon)
-		 * This check is is similar to that below, but faster */
-		if (iface == routed_from) {
+		/* Do not send back to same inteface (split horizon)  */
+		if (is_same_subnet(iface, routed_from)) {
 			continue;
 		}
 
-		/* Do not send to interface with similar subnet (split horizon) */
-		if (csp_iflist_is_within_subnet(iface->addr, routed_from)) {
-			continue;
-		}
+		if (next_iface != NULL) {
+			csp_packet_t * copy = csp_buffer_clone(packet);
 
-		/* Apply outgoing interface address to packet */
-		if (from_me && (idout->src == 0)) {
-			_idout.src = iface->addr;
+			convert_broadcast(idout, &idout_copy, next_iface);
+			send_packet(&idout_copy, copy, next_iface, via, from_me);
 		}
-
-		/* Rewrite routed broadcast (L3) to local (L2) when arriving at the interface */
-		if (csp_id_is_broadcast(idout->dst, iface)) {
-			_idout.dst = csp_id_get_max_nodeid();
-		}
-
-		/* Todo: Find an elegant way to avoid making a copy when only a single destination interface
-		 * is found. But without looping the list twice. And without using stack memory.
-		 * Is this even possible? */
-		copy = csp_buffer_clone(packet);
-		if (copy != NULL) {
-			csp_send_direct_iface(&_idout, copy, iface, via, from_me);
-		}
-
+		next_iface = iface;
 	}
 
-	/* If the above worked, we don't want to look at the routing table */
-	if (local_found == 1) {
-		csp_buffer_free(packet);
+	if (local_found) {
+		if (next_iface != NULL) {
+			convert_broadcast(idout, &idout_copy, next_iface);
+			send_packet(&idout_copy, packet, next_iface, via, from_me);
+		} else {
+			csp_buffer_free(packet);
+		}
+		/* If a match was found, we don't want to look at the routing table */
 		return;
 	}
 
@@ -158,32 +179,27 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 		do {
 			route_found = 1;
 
-			/* Do not send back to same interface (split horizon)
-			* This check is is similar to that below, but faster */
-			if (route->iface == routed_from) {
+			/* Do not send back to same inteface (split horizon)  */
+			if (is_same_subnet(route->iface, routed_from)) {
 				continue;
 			}
 
-			/* Do not send to interface with similar subnet (split horizon) */
-			if (csp_iflist_is_within_subnet(route->iface->addr, routed_from)) {
-				continue;
+			if (next_iface != NULL) {
+				csp_packet_t * copy = csp_buffer_clone(packet);
+				send_packet(&idout_copy, copy, next_iface, via, from_me);
 			}
-
-			/* Apply outgoing interface address to packet */
-			if (from_me && (idout->src == 0)) {
-				idout->src = route->iface->addr;
-			}
-
-			copy = csp_buffer_clone(packet);
-			if (copy != NULL) {
-				csp_send_direct_iface(idout, copy, route->iface, route->via, from_me);
-			}
+			next_iface = route->iface;
+			via = route->via;
 		} while ((route = csp_rtable_search_backward(route)) != NULL);
 	}
 
 	/* If the above worked, we don't want to look at default interfaces */
 	if (route_found == 1) {
-		csp_buffer_free(packet);
+		if (next_iface != NULL) {
+			send_packet(&idout_copy, packet, next_iface, via, from_me);
+		} else {
+			csp_buffer_free(packet);
+		}
 		return;
 	}
 
@@ -192,30 +208,20 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 	/* Try to send via default interfaces */
 	while ((iface = csp_iflist_get_by_isdfl(iface)) != NULL) {
 
-		/* Do not send back to same interface (split horizon)
-		 * This check is is similar to that below, but faster */
-		if (iface == routed_from) {
+		if (is_same_subnet(iface, routed_from)) {
 			continue;
 		}
 
-		/* Do not send to interface with similar subnet (split horizon) */
-		if (csp_iflist_is_within_subnet(iface->addr, routed_from)) {
-			continue;
+		if (next_iface != NULL) {
+			csp_packet_t * copy = csp_buffer_clone(packet);
+			send_packet(&idout_copy, copy, next_iface, via, from_me);
 		}
+		next_iface = iface;
+	}
 
-		/* Apply outgoing interface address to packet */
-		if (from_me && (idout->src == 0)) {
-			idout->src = iface->addr;
-		}
-
-		/* Todo: Find an elegant way to avoid making a copy when only a single destination interface
-		 * is found. But without looping the list twice. And without using stack memory.
-		 * Is this even possible? */
-		copy = csp_buffer_clone(packet);
-		if (copy != NULL) {
-			csp_send_direct_iface(idout, copy, iface, via, from_me);
-		}
-
+	if (next_iface != NULL) {
+		send_packet(&idout_copy, packet, next_iface, via, from_me);
+		return;
 	}
 
 	csp_buffer_free(packet);
