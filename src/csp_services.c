@@ -6,6 +6,7 @@
 
 #include <csp/csp_cmp.h>
 #include <endian.h>
+#include <string.h>
 #include <csp/arch/csp_time.h>
 #include <csp/csp_hooks.h>
 

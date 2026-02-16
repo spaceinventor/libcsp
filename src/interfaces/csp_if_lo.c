@@ -13,6 +13,7 @@ static int csp_lo_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, i
 	(void)iface;
 	(void)via;
 	(void)from_me;
+	(void)timestamp;
 
 	/* Send back into CSP, notice calling from task so last argument must be NULL! */
 	csp_qfifo_write(packet, &csp_if_lo, NULL);
