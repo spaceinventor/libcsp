@@ -81,6 +81,7 @@ void * csp_zmqhub_fixup_cspv1_del_dest_addr(uint8_t * rx_data, size_t * datalen)
  * @return 1 if packet was successfully transmitted, 0 on error
  */
 static int csp_zmqhub_tx(csp_iface_t * iface, uint16_t __maybe_unused via, csp_packet_t * packet, int __maybe_unused from_me, uint64_t *timestamp) {
+	(void) timestamp;
 
 	zmq_driver_t * drv = iface->driver_data;
 

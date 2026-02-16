@@ -121,7 +121,7 @@ static inline void send_packet(csp_id_t * idout_copy, csp_packet_t * snd_pkt, cs
 	}
 
 	if (snd_pkt != NULL) {
-		csp_send_direct_iface(idout_copy, snd_pkt, snd_iface, via, from_me);
+		csp_send_direct_iface(idout_copy, snd_pkt, snd_iface, via, from_me, NULL);
 	}
 }
 
@@ -186,7 +186,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 
 			if (next_iface != NULL) {
 				csp_packet_t * copy = csp_buffer_clone(packet);
-				send_packet(&idout_copy, copy, next_iface, via, from_me, tx_timestamp);
+				send_packet(&idout_copy, copy, next_iface, via, from_me);
 			}
 			next_iface = route->iface;
 			via = route->via;
@@ -196,7 +196,7 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 	/* If the above worked, we don't want to look at default interfaces */
 	if (route_found == 1) {
 		if (next_iface != NULL) {
-			send_packet(&idout_copy, packet, next_iface, via, from_me, tx_timestamp);
+			send_packet(&idout_copy, packet, next_iface, via, from_me);
 		} else {
 			csp_buffer_free(packet);
 		}
@@ -214,13 +214,13 @@ void csp_send_direct(csp_id_t* idout, csp_packet_t * packet, csp_iface_t * route
 
 		if (next_iface != NULL) {
 			csp_packet_t * copy = csp_buffer_clone(packet);
-			send_packet(&idout_copy, copy, next_iface, via, from_me, tx_timestamp);
+			send_packet(&idout_copy, copy, next_iface, via, from_me);
 		}
 		next_iface = iface;
 	}
 
 	if (next_iface != NULL) {
-		send_packet(&idout_copy, packet, next_iface, via, from_me, tx_timestamp);
+		send_packet(&idout_copy, packet, next_iface, via, from_me);
 		return;
 	}
 
@@ -337,7 +337,7 @@ void csp_send_prio(uint8_t prio, csp_conn_t * conn, csp_packet_t * packet) {
 	csp_send(conn, packet);
 }
 
-static int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, const void * outbuf, int outlen, void * inbuf, int inlen) {
+int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, const void * outbuf, int outlen, void * inbuf, int inlen, uint64_t *timestamp) {
 
 	if(outlen > CSP_BUFFER_SIZE){
 		return 0;

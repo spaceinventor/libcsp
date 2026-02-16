@@ -191,7 +191,7 @@ static inline int csp_transaction(uint8_t prio, uint16_t dest, uint8_t port, uin
  * @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
  * @return 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
  */
-int csp_transaction_persistent(csp_conn_t *conn, uint32_t timeout, const void *outbuf, int outlen, void *inbuf, int inlen);
+int csp_transaction_persistent(csp_conn_t *conn, uint32_t timeout, const void *outbuf, int outlen, void *inbuf, int inlen, uint64_t *timestamp);
 
 /**
  * Read data from a connection-less server socket.
