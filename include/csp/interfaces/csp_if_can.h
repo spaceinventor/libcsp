@@ -60,6 +60,8 @@
 #pragma once
 
 #include <csp/csp_interface.h>
+#include <stdint.h>
+#include <stdatomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -190,7 +192,7 @@ typedef int (*csp_can_driver_tx_t)(void * driver_data, uint32_t id, const uint8_
  * Interface data (state information).
  */
 typedef struct {
-	uint32_t cfp_packet_counter; /**< CFP Identification number - same number on all fragments from same CSP packet. */
+	atomic_int cfp_packet_counter; /**< CFP Identification number - same number on all fragments from same CSP packet. */
 	csp_can_driver_tx_t tx_func; /**< Tx function */
 	csp_packet_t * pbufs; /**< PBUF queue */
 } csp_can_interface_data_t;
