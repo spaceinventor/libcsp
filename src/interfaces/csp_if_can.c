@@ -166,8 +166,8 @@ static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 
 	csp_can_interface_data_t * ifdata = iface->interface_data;
 
-	/* Get an unique CFP id - this should be locked to prevent access from multiple tasks */
-	const uint32_t ident = ifdata->cfp_packet_counter++;
+	/* Get an unique CFP id */
+	const uint32_t ident = ifdata->cfp_packet_counter++; // Atomic operation as cfp_packet_counter is of type atomic_int
 
 	/* Figure out destination node based on routing entry */
 	const uint8_t dest = (via != CSP_NO_VIA_ADDRESS) ? via : packet->id.dst;
@@ -370,7 +370,7 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	csp_can_interface_data_t * ifdata = iface->interface_data;
 
 	/* Setup counters */
-	int sender_count = ifdata->cfp_packet_counter++;
+	int sender_count = ifdata->cfp_packet_counter++; // Atomic operation as cfp_packet_counter is of type atomic_int
 	int tx_count = 0;
 
 	uint32_t can_id = 0;

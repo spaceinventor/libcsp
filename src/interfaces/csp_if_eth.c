@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdatomic.h>
 
 #include <csp/csp.h>
 #include <csp/csp_id.h>
@@ -254,7 +255,7 @@ int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fro
 
     csp_id_prepend(packet);
 
-    static uint16_t packet_id = 0;
+    static atomic_int packet_id = 0;
     packet_id++;
     uint16_t offset = 0;
 
