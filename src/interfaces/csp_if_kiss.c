@@ -22,11 +22,10 @@
 #define TFESC    0xDD
 #define TNC_DATA 0x00
 
-int csp_kiss_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
+int csp_kiss_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)via;
 	(void)from_me;
-	(void)timestamp;
 
 	csp_kiss_interface_data_t * ifdata = iface->interface_data;
 	void * driver = iface->driver_data;

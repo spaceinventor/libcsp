@@ -33,7 +33,6 @@ typedef enum {
 	CSP_REBOOT			= 4,   /*< Reboot, see #CSP_REBOOT_MAGIC and #CSP_REBOOT_SHUTDOWN_MAGIC */
 	CSP_BUF_FREE		= 5,   /*< Free CSP buffers */
 	CSP_UPTIME			= 6,   /*< Uptime */
-	CSP_TIME_SYNC       = 7,   /*< Time synchronization */
 } csp_service_port_t;
 
 /** Listen on all ports, primarily used with csp_bind() */
@@ -131,7 +130,7 @@ typedef struct csp_packet_s {
 
 	uint16_t length;			/*< Data length */
 	csp_id_t id;				/*< CSP id (unpacked version CPU readable) */
-	uint64_t timestamp;         /*< Timestamp in ns for (the first received fragment of) the frame */
+	uint64_t timestamp;			/*< Timestamp in ns for (the last fragment of) the packet */
 
 	struct csp_packet_s * next; /*< Used for lists / queues of packets */
 
@@ -216,11 +215,17 @@ typedef csp_memptr64_t (*csp_memwrite64_fnc_t)(csp_memptr64_t, csp_memptr_t, siz
  * Time sync packet format
  */
 typedef struct {
-	uint32_t id;
+	uint16_t id;
+} csp_time_sync_t;
+
+/**
+ * Time sync correction packet format
+ */
+typedef struct {
+	uint16_t id;
 	uint32_t tv_sec;
 	uint32_t tv_nsec;
-	uint8_t correction;
-} csp_time_sync_t;
+} csp_time_sync_correction_t;
 
 #ifdef __cplusplus
 }

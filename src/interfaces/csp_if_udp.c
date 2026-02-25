@@ -17,11 +17,10 @@
 #define MSG_CONFIRM (0)
 #endif
 
-static int csp_if_udp_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
+static int csp_if_udp_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)via;
 	(void)from_me;
-	(void)timestamp;
 
 	csp_if_udp_conf_t * ifconf = iface->driver_data;
 

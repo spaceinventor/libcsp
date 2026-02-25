@@ -4,9 +4,8 @@
 #include <csp/csp_id.h>
 #include <csp/csp.h>
 
-int csp_i2c_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
-	(void)from_me;
-	(void)timestamp;
+int csp_i2c_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+	(void)from_me; /* Avoid compiler warnings about unused parameter */
 
 	/* Loopback */
 	if (packet->id.dst == iface->addr) {

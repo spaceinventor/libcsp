@@ -7,7 +7,9 @@
 #include <csp/csp.h>
 #include <csp/csp_id.h>
 
+#include "csp/csp_types.h"
 #include "csp_if_can_pbuf.h"
+#include <csp/csp_hooks.h>
 
 /**
  * TESTING:
@@ -163,9 +165,8 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	return CSP_ERR_NONE;
 }
 
-static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
+static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 	(void)from_me; /* Avoid compiler warnings about unused parameter */
-	(void)timestamp; /* Avoid compiler warnings about unused parameter */
 
 	/* Loopback */
 	if (packet->id.dst == iface->addr) {
@@ -276,10 +277,9 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 		}
 	}
 
+
 	/* BEGIN */
 	if (id & (CFP2_BEGIN_MASK << CFP2_BEGIN_OFFSET)) {
-
-		packet->timestamp = can_timestamp;
 
 		/* Discard packet if DLC is less than CSP id + CSP length fields */
 		if (dlc < 4) {
@@ -355,6 +355,8 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 			packet->id.dst = iface->addr;
 		}
 
+		packet->timestamp = can_timestamp;
+
 		/* Free packet buffer */
 		csp_can_pbuf_free(ifdata, packet, 0, task_woken);
 
@@ -366,11 +368,10 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	return CSP_ERR_NONE;
 }
 
-static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
+static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 	/* Avoid compiler warnings about unused parameter */
 	(void)via;
 	(void)from_me;
-	(void)timestamp;
 
 	/* Loopback */
 	if (packet->id.dst == iface->addr || csp_addr_is_alias(packet->id.dst)) {
@@ -386,6 +387,7 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 
 	uint32_t can_id = 0;
 	uint8_t frame_buf_inp = 0;
+	const void *context = NULL;
 
 	/* Pack mandatory fields of header */
 	can_id = (((packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
@@ -418,10 +420,17 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	/* Check for end condition */
 	if (tx_count == packet->length) {
 		can_id |= ((1 & CFP2_END_MASK) << CFP2_END_OFFSET);
+		context = packet;
 	}
 
 	/* Send first frame now */
-	if ((ifdata->tx_func)(iface->driver_data, can_id, frame_buf, frame_buf_inp) != CSP_ERR_NONE) {
+	int result;
+	if (ifdata->tx_func)
+		result = ifdata->tx_func(iface->driver_data, can_id, frame_buf, frame_buf_inp);
+	else
+		result = ifdata->tx_func_w_context(iface->driver_data, can_id, frame_buf, frame_buf_inp, context);
+
+	if (result != CSP_ERR_NONE) {
 		iface->tx_error++;
 		/* Does not free on return */
 		return CSP_ERR_DRIVER;
@@ -446,10 +455,15 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 		/* Check for end condition */
 		if (tx_count + data_bytes == packet->length) {
 			can_id |= ((1 & CFP2_END_MASK) << CFP2_END_OFFSET);
+			context = packet;
 		}
 
-		/* Send frame */
-		if ((ifdata->tx_func)(iface->driver_data, can_id, packet->data + tx_count, data_bytes) != CSP_ERR_NONE) {
+		if (ifdata->tx_func)
+			result = ifdata->tx_func(iface->driver_data, can_id, packet->data + tx_count, data_bytes);
+		else
+			result = ifdata->tx_func_w_context(iface->driver_data, can_id, packet->data + tx_count, data_bytes, context);
+
+		if (result != CSP_ERR_NONE) {
 			iface->tx_error++;
 			/* Does not free on return */
 			return CSP_ERR_DRIVER;
@@ -464,6 +478,14 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	return CSP_ERR_NONE;
 }
 
+void csp_can_set_tx_time(const void *context, uint64_t tx_time_ns) {
+
+	if (context == NULL)
+		return;
+
+	csp_set_packet_tx_time(context, tx_time_ns);
+}
+
 int csp_can_add_interface(csp_iface_t * iface) {
 
 	if ((iface == NULL) || (iface->name == NULL) || (iface->interface_data == NULL)) {
@@ -471,7 +493,7 @@ int csp_can_add_interface(csp_iface_t * iface) {
 	}
 
 	csp_can_interface_data_t * ifdata = iface->interface_data;
-	if (ifdata->tx_func == NULL) {
+	if (ifdata->tx_func == NULL && ifdata->tx_func_w_context == NULL) {
 		return CSP_ERR_INVAL;
 	}
 

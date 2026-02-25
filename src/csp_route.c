@@ -164,7 +164,7 @@ int csp_route_work(void) {
 	if (!is_to_me) {
 
 		/* Otherwise, actually send the message */
-		csp_send_direct(&packet->id, packet, input.iface, NULL);
+		csp_send_direct(&packet->id, packet, input.iface);
 		return CSP_ERR_NONE;
 
 	}

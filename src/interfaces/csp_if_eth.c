@@ -13,7 +13,6 @@
 #include <csp/csp.h>
 #include <csp/csp_id.h>
 #include <csp/csp_interface.h>
-#include <csp/arch/csp_time.h>
 
 
 /**
@@ -133,7 +132,7 @@ void csp_eth_arp_get_addr(uint8_t * mac_addr, uint16_t csp_addr)
     memset(mac_addr, 0xff, CSP_ETH_ALEN);
 }
 
-int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken, uint64_t timestamp) {
+int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t received_len, int * task_woken) {
 
 	csp_eth_interface_data_t * ifdata = iface->interface_data;
 
@@ -236,14 +235,13 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_NONE;
     }
 
-    packet->timestamp = timestamp;
-
     csp_qfifo_write(packet, iface, task_woken);
 
     return CSP_ERR_NONE;
 }
 
-int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp) {
+int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+    /* Avoid compiler warnings about unused parameter */
     (void)via;
     (void)from_me;
 
@@ -260,7 +258,7 @@ int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fro
     static uint16_t packet_id = 0;
     packet_id++;
     uint16_t offset = 0;
-    
+
     while (offset < packet->frame_length) {
 
         csp_eth_header_t *eth_frame = ifdata->tx_buf;
@@ -279,7 +277,7 @@ int csp_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fro
 
         memcpy(eth_frame->frame_begin, packet->frame_begin + offset, seg_size);
 
-		if ((ifdata->tx_func)(iface->driver_data, eth_frame, timestamp) != CSP_ERR_NONE) {
+		if ((ifdata->tx_func)(iface->driver_data, eth_frame) != CSP_ERR_NONE) {
 			iface->tx_error++;
 			/* Does not free on return */
 			return CSP_ERR_DRIVER;

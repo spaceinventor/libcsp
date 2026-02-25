@@ -11,7 +11,6 @@
 #include <csp/csp_id.h>
 #include <csp/arch/csp_time.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 
 /**
@@ -184,7 +183,7 @@ static int do_cmp_clock(struct csp_cmp_message * cmp) {
 	int res = CSP_ERR_NONE;
 	if (clock.tv_sec != 0) {
 		// set time
-		res = csp_clock_set_time(&clock, 0);
+		res = csp_clock_set_time(&clock);
 		if (res != CSP_ERR_NONE) {
 			csp_dbg_errno = CSP_DBG_ERR_CLOCK_SET_FAIL;
 		}
@@ -196,6 +195,36 @@ static int do_cmp_clock(struct csp_cmp_message * cmp) {
 	cmp->clock.tv_nsec = htobe32(clock.tv_nsec);
 
 	return res;
+}
+
+#define CSP_TIME_SYNC_NUM_OF 2
+static uint16_t time_sync_last_id[CSP_TIME_SYNC_NUM_OF];
+static uint64_t time_sync_last_rx[CSP_TIME_SYNC_NUM_OF];
+static uint8_t time_sync_next_idx;
+
+static int do_cmp_time_sync(struct csp_cmp_message *cmp, uint64_t rx_timestamp) {
+
+	uint16_t id = be16toh(cmp->time_sync.id);
+
+	if (cmp->code == CSP_CMP_CLOCK_TIME_SYNC) {
+		/* Save sync info */
+		time_sync_last_id[time_sync_next_idx] = id;
+		time_sync_last_rx[time_sync_next_idx] = rx_timestamp;
+		time_sync_next_idx = (time_sync_next_idx + 1) % CSP_TIME_SYNC_NUM_OF;
+	} else if (cmp->code == CSP_CMP_CLOCK_CORRECTION_TIME_SYNC) {
+		for (uint8_t idx = 0; idx < CSP_TIME_SYNC_NUM_OF; idx++) {
+			if (id == time_sync_last_id[idx] && time_sync_last_rx[idx] > 0) {
+				csp_timestamp_t now_ts;
+				now_ts.tv_sec = be32toh(cmp->time_sync_correction.tv_sec);
+				now_ts.tv_nsec = be32toh(cmp->time_sync_correction.tv_nsec);
+
+				csp_clock_set_time_w_local_time(&now_ts, time_sync_last_rx[idx]);
+				break;
+			}
+		}
+	}
+
+	return CSP_ERR_INVAL; // TODO: How to indicate that a response should not be send?
 }
 
 /* CSP Management Protocol handler */
@@ -249,6 +278,11 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 			ret = do_cmp_clock(cmp);
 			break;
 
+		case CSP_CMP_CLOCK_TIME_SYNC:
+		case CSP_CMP_CLOCK_CORRECTION_TIME_SYNC:
+			ret = do_cmp_time_sync(cmp, packet->timestamp);
+			break;
+
 		default:
 			ret = CSP_ERR_INVAL;
 			break;
@@ -271,11 +305,9 @@ void csp_service_handler(csp_packet_t * packet) {
 			}
 			break;
 
-		case CSP_PING: {
+		case CSP_PING:
 			/* A ping means, just echo the packet, so no changes */
-			// printf("Packet TS: %"PRIu64"\n", packet->timestamp);
 			break;
-		}
 
 		case CSP_PS: {
 			packet->length = csp_ps_hook(packet);
@@ -327,32 +359,6 @@ void csp_service_handler(csp_packet_t * packet) {
 			time = htobe32(time);
 			memcpy(packet->data, &time, sizeof(time));
 			packet->length = sizeof(time);
-			break;
-		}
-
-		case CSP_TIME_SYNC: {
-			static uint32_t last_sync_id = 0;
-			static uint64_t last_sync_rx = 0;
-
-			/* Get time from packet */
-			csp_time_sync_t time_sync;
-			memcpy(&time_sync, packet->data, sizeof(csp_time_sync_t));
-
-			uint32_t id = be32toh(time_sync.id);
-
-			if (id == last_sync_id && last_sync_rx > 0 && time_sync.correction) {
-				csp_timestamp_t now_ts;
-				now_ts.tv_sec = be32toh(time_sync.tv_sec);
-				now_ts.tv_nsec = be32toh(time_sync.tv_nsec);
-
-				csp_clock_set_time(&now_ts, last_sync_rx);
-			} else {
-				/* Save sync info */
-				last_sync_id = id;
-				last_sync_rx = packet->timestamp;
-			}
-
-			csp_buffer_free(packet);
 			break;
 		}
 

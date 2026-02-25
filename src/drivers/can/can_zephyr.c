@@ -79,7 +79,7 @@ static void csp_can_rx_thread(void * arg1, void * arg2, void * arg3) {
 		}
 
 		/* Call the common CSP CAN RX function. */
-		csp_can_rx(iface, frame.id, frame.data, frame.dlc, NULL);
+		csp_can_rx(iface, frame.id, frame.data, frame.dlc, NULL, 0);
 	}
 }
 
