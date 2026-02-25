@@ -44,6 +44,7 @@ application will fail to link if you use csp_if_tun without these two functions.
 ```c
 void csp_clock_get_time(csp_timestamp_t * time);
 int csp_clock_set_time(const csp_timestamp_t * time);
+int csp_clock_set_time_w_local_time(const csp_timestamp_t * time, uint64_t local_rx_ns);
 ```
 
 The get and set time functions rely on `arch/<os>` and all have default implementations.

@@ -18,7 +18,7 @@ extern "C" {
  *
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-typedef int (*nexthop_t)(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me, uint64_t *timestamp);
+typedef int (*nexthop_t)(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me);
 typedef int (*csp_alias_add_t)(void * driver_data, uint16_t addr);
 
 /**
@@ -53,6 +53,7 @@ struct csp_iface_s {
 	struct csp_iface_s * next;
 
 };
+
 /**
  * Used to represent an alias reception address, bound to a particular interface
  */

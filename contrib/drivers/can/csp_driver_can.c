@@ -83,7 +83,7 @@ void CAN_0_rx_callback(struct can_async_descriptor *const descr) {
 
 		/* Process frame within ISR
 		 * (This can also be deferred to a task with: csp_can_process_frame_deferred) */
-		csp_can_rx(&mcan[0].interface, msg.id, msg.data, msg.len, &xTaskWoken);
+		csp_can_rx(&mcan[0].interface, msg.id, msg.data, msg.len, &xTaskWoken, 0);
 
 	}
 
@@ -116,7 +116,7 @@ static void can_task(void * param) {
 
 			/* Process frame within ISR
 			* (This can also be deferred to a task with: csp_can_process_frame_deferred) */
-			csp_can_rx(&mcan[0].interface, msg.id, msg.data, msg.len, &xTaskWoken);
+			csp_can_rx(&mcan[0].interface, msg.id, msg.data, msg.len, &xTaskWoken, 0);
 
 		}
 

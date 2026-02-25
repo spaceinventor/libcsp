@@ -70,6 +70,14 @@ extern "C" {
  *  Poke/write data from memory - 64-bit version.
  */
 #define CSP_CMP_POKE_V2 9
+/**
+ *  Set clock with Time sync protocol.
+ */
+#define CSP_CMP_CLOCK_TIME_SYNC 10
+/**
+ *  Time correction with Time sync protocol.
+ */
+#define CSP_CMP_CLOCK_CORRECTION_TIME_SYNC 11
 /**@}*/
 
 /**
@@ -171,6 +179,8 @@ struct csp_cmp_message {
 			char data[CSP_CMP_POKE_V2_MAX_LEN];
 		} poke_v2;
 		csp_timestamp_t clock;
+		csp_time_sync_t time_sync;
+		csp_time_sync_correction_t time_sync_correction;
 	};
 } __attribute__((__packed__));
 
@@ -252,17 +262,6 @@ static inline int csp_cmp_peek_v2(uint16_t node, uint32_t timeout, struct csp_cm
 static inline int csp_cmp_poke_v2(uint16_t node, uint32_t timeout, struct csp_cmp_message *msg) {
 	return csp_cmp(node, timeout, CSP_CMP_POKE_V2, CMP_SIZE(poke_v2) - sizeof(msg->poke_v2.data) + msg->poke_v2.len, msg);
 }
-
-/**
- * Get clock from remote node.
- *
- *	@param[in] node address of subsystem.
- *	@param[in] timeout timeout in mS to wait for reply..
- *	@param[in,out] msg clock.
- *  @param[out] rx_timestamp receive timestamp in nanoseconds.
- *	@return #CSP_ERR_NONE on success, otherwise an error code.
- */
-int csp_cmp_clock_with_rx_timestamp(uint16_t node, uint32_t timeout, struct csp_cmp_message * msg, uint64_t *rx_timestamp);
 
 #ifdef __cplusplus
 }

@@ -15,13 +15,24 @@ __weak void csp_clock_get_time(csp_timestamp_t * time) {
 	}
 }
 
-__weak int csp_clock_set_time(const csp_timestamp_t * time, uint64_t rx_timestamp) {
-
-	(void)rx_timestamp; 
+__weak int csp_clock_set_time(const csp_timestamp_t * time) {
 
 	struct timespec ts = {.tv_sec = time->tv_sec, .tv_nsec = time->tv_nsec};
 	if (clock_settime(CLOCK_REALTIME, &ts) == 0) {
 		return CSP_ERR_NONE;
 	}
 	return CSP_ERR_INVAL;  // CSP doesn't have any matching error codes
+}
+
+__weak int csp_clock_set_time_w_local_time(const csp_timestamp_t * time, uint64_t local_rx_ns) {
+
+	(void)time;
+	(void)local_rx_ns;
+	return CSP_ERR_NOTSUP;
+}
+
+__weak void csp_set_packet_tx_time(const void *packet, uint64_t tx_time_ns) {
+
+	(void)packet;
+	(void)tx_time_ns;
 }
