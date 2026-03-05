@@ -27,11 +27,7 @@
 #pragma once
 
 #include <csp/csp.h>
-#include <stdio.h>
 #include <inttypes.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #include <csp/interfaces/csp_if_eth.h>
 
