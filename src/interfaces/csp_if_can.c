@@ -64,7 +64,7 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 		case CFP_BEGIN:
 
 			/* Discard packet if DLC is less than CSP id + CSP length fields */
-			if (dlc < (sizeof(uint32_t) + sizeof(uint16_t))) {
+			if (dlc < CFP1_DATA_OFFSET) {
 				csp_dbg_can_errno = CSP_DBG_CAN_ERR_SHORT_BEGIN;
 				iface->frame++;
 				csp_can_pbuf_free(ifdata, packet, 1, task_woken);
@@ -74,11 +74,11 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 			csp_id_setup_rx(packet);
 
 			/* Copy CSP identifier (header) */
-			memcpy(packet->frame_begin, data, sizeof(uint32_t));
-			packet->frame_length += sizeof(uint32_t);
+			memcpy(packet->frame_begin, data, CFP1_CSP_HEADER_SIZE);
+			packet->frame_length += CFP1_CSP_HEADER_SIZE;
 
 			/* Copy CSP length (of data) */
-			memcpy(&(packet->length), data + sizeof(uint32_t), sizeof(packet->length));
+			memcpy(&(packet->length), data + CFP1_CSP_HEADER_SIZE, sizeof(packet->length));
 			packet->length = be16toh(packet->length);
 
 			/* Overflow: check if incoming frame data length is larger than buffer length  */
@@ -92,7 +92,7 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 			packet->rx_count = 0;
 
 			/* Set offset to prevent CSP header from being copied to CSP data */
-			offset = sizeof(uint32_t) + sizeof(uint16_t);
+			offset = CFP1_DATA_OFFSET;
 
 			/* Set remain field - increment to include begin packet */
 			packet->remain = CFP_REMAIN(id) + 1;
