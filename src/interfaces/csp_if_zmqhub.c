@@ -14,6 +14,7 @@
 #include <csp/csp_id.h>
 
 #include "../csp_macro.h"
+#include "../csp_buffer_private.h"
 
 /**
  * ZMQ destination size (for libcsp1 backwards compatibility)
