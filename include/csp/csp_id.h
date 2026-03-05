@@ -16,6 +16,14 @@ extern "C" {
 void csp_id_prepend(csp_packet_t * packet);
 
 /**
+ * Extract CSP header from a 4 (CSP1) or 6 (CSP2) byte array
+ *
+ * @param The first bytes of a CSP packet, representing CSP the header structure
+ * @return The extracted header ID
+ */
+csp_id_t csp_id_extract(const uint8_t * data);
+
+/**
  * Strip CSP header fields from the packet's data buffer.
  *
  * This function decodes the CSP ID header from the packet and adjusts the data offset.

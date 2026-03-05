@@ -49,11 +49,18 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	csp_packet_t * packet = csp_can_pbuf_find(ifdata, id, CFP_ID_CONN_MASK, task_woken);
 	if (packet == NULL) {
 		if (CFP_TYPE(id) == CFP_BEGIN) {
-			packet = csp_can_pbuf_new(ifdata, id, task_woken);
+			uint8_t header[CFP1_CSP_HEADER_SIZE];
+			/* Copy first 4 from data as they represent the CSP header, the data field is in network order */
+			memcpy(header, data, CFP1_CSP_HEADER_SIZE);
+			csp_id_t csp_id = csp_id_extract(header);
+			packet = csp_can_pbuf_new(ifdata, id, csp_id, task_woken);
+			packet->id = csp_id;
 			if (packet == NULL) {
 				iface->drop++;
 				return CSP_ERR_NOBUFS;
 			}
+			memcpy(packet->frame_begin, data, CFP1_CSP_HEADER_SIZE);
+			packet->frame_length += CFP1_CSP_HEADER_SIZE;
 		} else {
 			iface->frame++;
 			return CSP_ERR_INVAL;
@@ -77,12 +84,8 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 
 			csp_id_setup_rx(packet);
 
-			/* Copy CSP identifier (header) */
-			memcpy(packet->frame_begin, data, CFP1_CSP_HEADER_SIZE);
-			packet->frame_length += CFP1_CSP_HEADER_SIZE;
-
 			/* Copy CSP length (of data) */
-			memcpy(&(packet->length), data + CFP1_CSP_HEADER_SIZE, sizeof(packet->length));
+			memcpy(&(packet->length), data + CFP1_CSP_HEADER_SIZE, CFP1_DATA_LEN_SIZE);
 			packet->length = be16toh(packet->length);
 
 			/* Overflow: check if incoming frame data length is larger than buffer length  */
@@ -264,11 +267,23 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	csp_packet_t * packet = csp_can_pbuf_find(ifdata, id, CFP2_ID_CONN_MASK, task_woken);
 	if (packet == NULL) {
 		if (id & (CFP2_BEGIN_MASK << CFP2_BEGIN_OFFSET)) {
-			packet = csp_can_pbuf_new(ifdata, id, task_woken);
+			uint8_t header[6];
+			uint16_t first_two = id >> CFP2_DST_OFFSET;
+			first_two = htobe16(first_two);
+			memcpy(header, &first_two, 2);
+
+			/* Copy next 4 from data, the data field is in network order */
+			memcpy(&header[2], data, 4);
+			csp_id_t csp_id = csp_id_extract(header);
+			packet = csp_can_pbuf_new(ifdata, id, csp_id, task_woken);
 			if (packet == NULL) {
 				iface->drop++;
 				return CSP_ERR_NOBUFS;
 			}
+			packet->id = csp_id;
+			memcpy(packet->frame_begin, header, csp_id_get_header_size());
+			packet->frame_length = csp_id_get_header_size();
+			packet->length = 0;
 		} else {
 			iface->frame++;
 			return CSP_ERR_INVAL;
@@ -293,16 +308,6 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 		 * Because the id field has already been converted in memory to a 32-bit
 		 * host-order field, extract the first two bytes and convert back to
 		 * network order */
-		uint16_t first_two = id >> CFP2_DST_OFFSET;
-		first_two = htobe16(first_two);
-		memcpy(packet->frame_begin, &first_two, 2);
-
-		/* Copy next 4 from data, the data field is in network order */
-		memcpy(&packet->frame_begin[2], data, 4);
-
-		packet->frame_length = 6;
-		packet->length = 0;
-
 		/* Move RX offset for incoming data */
 		data += 4;
 		dlc -= 4;

@@ -129,6 +129,10 @@ static void * csp_zmqhub_task(void * param) {
 			continue;
 		}
 
+		// Copy the data from zmq to csp
+		uint8_t * rx_data = zmq_msg_data(&msg);
+		rx_data = csp_zmqhub_fixup_cspv1_del_dest_addr(rx_data, &datalen);
+
 		// Create new csp packet
 		if (csp_iflist_get_by_addr(*((uint16_t*)&rx_data[2]) & 0x3FFF) != NULL) {
 			/* The packet is for us, make sure we don't silently ignore the situation if we can't process it */
@@ -143,10 +147,6 @@ static void * csp_zmqhub_task(void * param) {
 			zmq_msg_close(&msg);
 			continue;
 		}
-
-		// Copy the data from zmq to csp
-		uint8_t * rx_data = zmq_msg_data(&msg);
-		rx_data = csp_zmqhub_fixup_cspv1_del_dest_addr(rx_data, &datalen);
 
 		csp_id_setup_rx(packet);
 

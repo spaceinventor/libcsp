@@ -180,7 +180,11 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    csp_packet_t * packet = csp_eth_pbuf_find(ifdata, packet_id, task_woken);
+    uint8_t csp_header[6];
+    memcpy(csp_header, eth_frame->frame_begin, 6);
+    csp_id_t csp_id = csp_id_extract(csp_header);
+
+    csp_packet_t * packet = csp_eth_pbuf_find(ifdata, packet_id, csp_id, task_woken);
 
     if (packet == NULL) {
         iface->drop++;
