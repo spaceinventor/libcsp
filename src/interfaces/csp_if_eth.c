@@ -1,6 +1,6 @@
 
 #include <csp/interfaces/csp_if_eth.h>
-#include <csp/interfaces/csp_if_eth_pbuf.h>
+#include "csp_if_eth_pbuf.h"
 #include <csp/arch/csp_time.h>
 
 #include <endian.h>
