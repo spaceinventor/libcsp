@@ -4,7 +4,7 @@
 
 #include <csp/csp_id.h>
 #include <csp/arch/csp_time.h>
-#include <csp/interfaces/csp_if_eth_pbuf.h>
+#include "csp_if_eth_pbuf.h"
 
 /* Buffer element timeout in ms */
 #define PBUF_TIMEOUT_MS 1000
