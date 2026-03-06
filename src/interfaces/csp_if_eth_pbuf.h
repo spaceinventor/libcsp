@@ -27,11 +27,7 @@
 #pragma once
 
 #include <csp/csp.h>
-#include <stdio.h>
 #include <inttypes.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 #include <csp/interfaces/csp_if_eth.h>
 
@@ -47,8 +43,8 @@ typedef struct {
 } csp_eth_pbuf_element_t;
 
 void csp_eth_pbuf_free(csp_eth_interface_data_t * ifdata, csp_packet_t * buffer, int buf_free, int * task_woken);
-csp_packet_t * csp_eth_pbuf_new(csp_eth_interface_data_t * ifdata, uint32_t id, uint32_t now, int * task_woken);
-csp_packet_t * csp_eth_pbuf_find(csp_eth_interface_data_t * ifdata, uint32_t id, int * task_woken);
+csp_packet_t * csp_eth_pbuf_new(csp_eth_interface_data_t * ifdata, uint32_t id, csp_id_t csp_id, uint32_t now, int * task_woken);
+csp_packet_t * csp_eth_pbuf_find(csp_eth_interface_data_t * ifdata, uint32_t id, csp_id_t csp_id, int * task_woken);
 void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, uint32_t now, int * task_woken);
 
 #ifdef __cplusplus
