@@ -94,6 +94,8 @@ int csp_id_get_header_size(void);
  */
 void csp_id_prepend_fixup_cspv1(csp_packet_t * packet);
 
+csp_id_t csp_id_extract(const uint8_t * data);
+
 /**
  * Strip CSPv1-compatible ID header (ZMQ fixup).
  *
@@ -111,6 +113,13 @@ int csp_id_strip_fixup_cspv1(csp_packet_t * packet);
  */
 static inline void csp_id_prepend_fixup_cspv1(csp_packet_t * packet) {
 	csp_id_prepend(packet);
+}
+
+/**
+ * Wrapper for csp_id_extract when no fixup is required.
+ */
+static inline csp_id_t csp_id_extract_fixup_cspv1(const uint8_t * data) {
+	return csp_id_extract(data);
 }
 
 /**

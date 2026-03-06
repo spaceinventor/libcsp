@@ -231,7 +231,7 @@ int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
 		return -1;
 	}
 
-	packet->id = csp_id_extract_cspv1(packet->frame_begin);
+	packet->id = csp_id_extract_fixup_cspv1(packet->frame_begin);
 	packet->length = packet->frame_length - csp_id_get_header_size();
 	return 0;
 }

@@ -54,11 +54,14 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 			memcpy(header, data, CFP1_CSP_HEADER_SIZE);
 			csp_id_t csp_id = csp_id_extract(header);
 			packet = csp_can_pbuf_new(ifdata, id, csp_id, task_woken);
-			packet->id = csp_id;
 			if (packet == NULL) {
 				iface->drop++;
 				return CSP_ERR_NOBUFS;
 			}
+
+			csp_id_setup_rx(packet);
+			packet->id = csp_id;
+
 			memcpy(packet->frame_begin, data, CFP1_CSP_HEADER_SIZE);
 			packet->frame_length += CFP1_CSP_HEADER_SIZE;
 		} else {
@@ -81,8 +84,6 @@ static int csp_can1_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 				csp_can_pbuf_free(ifdata, packet, 1, task_woken);
 				break;
 			}
-
-			csp_id_setup_rx(packet);
 
 			/* Copy CSP length (of data) */
 			memcpy(&(packet->length), data + CFP1_CSP_HEADER_SIZE, CFP1_DATA_LEN_SIZE);
