@@ -16,10 +16,10 @@ extern "C" {
 void csp_id_prepend(csp_packet_t * packet);
 
 /**
- * Extract CSP header from a 4 (CSP1) or 6 (CSP2) byte array
+ * Extract CSP header from a 4 (CSP1) or 6 (CSP2) byte array.
  *
- * @param The first bytes of a CSP packet, representing CSP the header structure
- * @return The extracted header ID
+ * @param The first bytes of a CSP packet, representing the CSP header structure.
+ * @return The extracted header ID structure.
  */
 csp_id_t csp_id_extract(const uint8_t * data);
 
@@ -94,7 +94,13 @@ int csp_id_get_header_size(void);
  */
 void csp_id_prepend_fixup_cspv1(csp_packet_t * packet);
 
-csp_id_t csp_id_extract(const uint8_t * data);
+/**
+ * Extract CSP header from a 4 (CSP1) or 6 (CSP2) byte array (ZMQ fixup).
+ *
+ * @param The first bytes of a CSP packet, representing the CSP header structure.
+ * @return The extracted header ID structure.
+ */
+csp_id_t csp_id_extract_fixup_cspv1(const uint8_t * data);
 
 /**
  * Strip CSPv1-compatible ID header (ZMQ fixup).
