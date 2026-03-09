@@ -54,12 +54,21 @@ endif
 csp_deps += yaml_dep
 conf.set('CSP_HAVE_LIBYAML', yaml_dep.found())
 
-# Libc dependency
-clib = meson.get_compiler('c').find_library('c', required: false)
-if not clib.found()
-	clib = dependency('libc', fallback: ['picolibc', 'picolibc_dep'], required: true)
+clib_dep = dependency('libc', required: false)
+if not clib_dep.found()
+	picolib_dep = dependency('', fallback : ['picolibc', 'picolibc_dep'], required : false)
+	if picolib_dep.found()
+		error('\n' +
+		'=======================================================================\n' +
+		'Libcsp no longer automatically fetches picolibc. \n' +
+		'If you intended to use picolibc, inject it from your main meson.build:\n\n' +
+		'    picolibc_proj = subproject(\'picolibc\')\n' +
+		'    meson.override_dependency(\'libc\', picolibc_proj.get_variable(\'picolibc_dep\'))\n' +
+		'=======================================================================')
+	endif
+	clib_dep = meson.get_compiler('c').find_library('c', required: true)
 endif
-csp_deps += clib
+csp_deps += clib_dep
 
 # Include paths
 csp_inc = include_directories('include', 'src')
