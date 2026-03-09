@@ -16,14 +16,16 @@ void csp_eth_pbuf_free(csp_eth_interface_data_t * ifdata, csp_packet_t * buffer,
 
 	while (packet) {
 
+		csp_packet_t * next = packet->next;
+
 		/* Perform cleanup in used pbufs */
 		if (packet == buffer) {
 
 			/* Erase from list prev->next = next */
 			if (prev) {
-				prev->next = packet->next;
+				prev->next = next;
 			} else {
-				ifdata->pbufs = packet->next;
+				ifdata->pbufs = next;
 			}
 
 			if (buf_free) {
@@ -33,10 +35,11 @@ void csp_eth_pbuf_free(csp_eth_interface_data_t * ifdata, csp_packet_t * buffer,
 					csp_buffer_free_isr(packet);
 				}
 			}
+			return;
 		}
 
 		prev = packet;
-		packet = packet->next;
+		packet = next;
 	}
 
 }
@@ -68,14 +71,16 @@ void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, uint32_t now, int *
 
 	while (packet) {
 
+		csp_packet_t * next = packet->next;
+
 		/* Perform cleanup in used pbufs */
 		if ((now - packet->last_used) > PBUF_TIMEOUT_MS) {
 
 			/* Erase from list prev->next = next */
 			if (prev) {
-				prev->next = packet->next;
+				prev->next = next;
 			} else {
-				ifdata->pbufs = packet->next;
+				ifdata->pbufs = next;
 			}
 
 			if (task_woken == NULL) {
@@ -84,10 +89,13 @@ void csp_eth_pbuf_cleanup(csp_eth_interface_data_t * ifdata, uint32_t now, int *
 				csp_buffer_free_isr(packet);
 			}
 
+			packet = next;
+			continue;
+
 		}
 
 		prev = packet;
-		packet = packet->next;
+		packet = next;
 	}
 
 }
