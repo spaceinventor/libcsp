@@ -75,14 +75,16 @@ void csp_can_pbuf_cleanup(csp_can_interface_data_t * ifdata, int * task_woken) {
 
 	while (packet) {
 
+		csp_packet_t * next = packet->next;
+
 		/* Perform cleanup in used pbufs */
 		if (now - packet->last_used > PBUF_TIMEOUT_MS) {
 
 			/* Erase from list prev->next = next */
 			if (prev) {
-				prev->next = packet->next;
+				prev->next = next;
 			} else {
-				ifdata->pbufs = packet->next;
+				ifdata->pbufs = next;
 			}
 
 			if (task_woken == NULL) {
@@ -91,10 +93,13 @@ void csp_can_pbuf_cleanup(csp_can_interface_data_t * ifdata, int * task_woken) {
 				csp_buffer_free_isr(packet);
 			}
 
+			packet = next;
+			continue;
+
 		}
 
 		prev = packet;
-		packet = packet->next;
+		packet = next;
 	}
 
 }
