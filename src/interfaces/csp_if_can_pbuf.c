@@ -19,16 +19,14 @@ void csp_can_pbuf_free(csp_can_interface_data_t * ifdata, csp_packet_t * buffer,
 
 	while (packet) {
 
-		csp_packet_t * next = packet->next;
-
 		/* Perform cleanup in used pbufs */
 		if (packet == buffer) {
 
 			/* Erase from list prev->next = next */
 			if (prev) {
-				prev->next = next;
+				prev->next = packet->next;
 			} else {
-				ifdata->pbufs = next;
+				ifdata->pbufs = packet->next;
 			}
 
 			if (buf_free) {
@@ -42,7 +40,7 @@ void csp_can_pbuf_free(csp_can_interface_data_t * ifdata, csp_packet_t * buffer,
 		}
 
 		prev = packet;
-		packet = next;
+		packet = packet->next;
 	}
 
 }
