@@ -63,16 +63,11 @@ static void csp_id1_prepend(csp_packet_t * packet, bool cspv1_fixup) {
 	memcpy(packet->frame_begin, &id1, CSP_ID1_HEADER_SIZE);
 }
 
-static int csp_id1_strip(csp_packet_t * packet, bool cspv1_fixup) {
-
-	if (packet->frame_length < CSP_ID1_HEADER_SIZE) {
-		return -1;
-	}
+static csp_id_t csp_id1_extract(const uint8_t * data, bool cspv1_fixup) {
 
 	/* Get 32 bit in network byte order */
 	uint32_t id1_raw = 0;
-	memcpy(&id1_raw, packet->frame_begin, CSP_ID1_HEADER_SIZE);
-	packet->length = packet->frame_length - CSP_ID1_HEADER_SIZE;
+	memcpy(&id1_raw, data, CSP_ID1_HEADER_SIZE);
 
 	/* Convert to host order */
 	uint32_t id1 = be32toh(id1_raw);
@@ -83,14 +78,15 @@ static int csp_id1_strip(csp_packet_t * packet, bool cspv1_fixup) {
 
 	/* Parse header:
 	 * Now in easy to work with in 32 bit register */
-	packet->id.pri = (id1 >> CSP_ID1_PRIO_OFFSET) & CSP_ID1_PRIO_MASK;
-	packet->id.dst = (id1 >> CSP_ID1_DST_OFFSET) & CSP_ID1_DST_MASK;
-	packet->id.src = (id1 >> CSP_ID1_SRC_OFFSET) & CSP_ID1_SRC_MASK;
-	packet->id.dport = (id1 >> CSP_ID1_DPORT_OFFSET) & CSP_ID1_DPORT_MASK;
-	packet->id.sport = (id1 >> CSP_ID1_SPORT_OFFSET) & CSP_ID1_SPORT_MASK;
-	packet->id.flags = (id1 >> CSP_ID1_FLAGS_OFFSET) & CSP_ID1_FLAGS_MASK;
+	csp_id_t id;
+	id.pri = (id1 >> CSP_ID1_PRIO_OFFSET) & CSP_ID1_PRIO_MASK;
+	id.dst = (id1 >> CSP_ID1_DST_OFFSET) & CSP_ID1_DST_MASK;
+	id.src = (id1 >> CSP_ID1_SRC_OFFSET) & CSP_ID1_SRC_MASK;
+	id.dport = (id1 >> CSP_ID1_DPORT_OFFSET) & CSP_ID1_DPORT_MASK;
+	id.sport = (id1 >> CSP_ID1_SPORT_OFFSET) & CSP_ID1_SPORT_MASK;
+	id.flags = (id1 >> CSP_ID1_FLAGS_OFFSET) & CSP_ID1_FLAGS_MASK;
 
-	return 0;
+	return id;
 }
 
 static void csp_id1_setup_rx(csp_packet_t * packet) {
@@ -147,17 +143,12 @@ static void csp_id2_prepend(csp_packet_t * packet) {
 	memcpy(packet->frame_begin, &id2, CSP_ID2_HEADER_SIZE);
 }
 
-static int csp_id2_strip(csp_packet_t * packet) {
-
-	if (packet->frame_length < CSP_ID2_HEADER_SIZE) {
-		return -1;
-	}
+static csp_id_t csp_id2_extract(const uint8_t* data) {
 
 	/* Get 48 bit in network byte order:
 	 * Most significant byte ends in byte 0 */
 	uint64_t id2 = 0;
-	memcpy(&id2, packet->frame_begin, CSP_ID2_HEADER_SIZE);
-	packet->length = packet->frame_length - CSP_ID2_HEADER_SIZE;
+	memcpy(&id2, data, CSP_ID2_HEADER_SIZE);
 
 	/* Convert to host order:
 	 * Most significant byte ends in byte 7, we then shift down
@@ -166,14 +157,15 @@ static int csp_id2_strip(csp_packet_t * packet) {
 
 	/* Parse header:
 	 * Now in easy to work with in 32 bit register */
-	packet->id.pri = (id2 >> CSP_ID2_PRIO_OFFSET) & CSP_ID2_PRIO_MASK;
-	packet->id.dst = (id2 >> CSP_ID2_DST_OFFSET) & CSP_ID2_DST_MASK;
-	packet->id.src = (id2 >> CSP_ID2_SRC_OFFSET) & CSP_ID2_SRC_MASK;
-	packet->id.dport = (id2 >> CSP_ID2_DPORT_OFFSET) & CSP_ID2_DPORT_MASK;
-	packet->id.sport = (id2 >> CSP_ID2_SPORT_OFFSET) & CSP_ID2_SPORT_MASK;
-	packet->id.flags = (id2 >> CSP_ID2_FLAGS_OFFSET) & CSP_ID2_FLAGS_MASK;
+	csp_id_t id;
+	id.pri = (id2 >> CSP_ID2_PRIO_OFFSET) & CSP_ID2_PRIO_MASK;
+	id.dst = (id2 >> CSP_ID2_DST_OFFSET) & CSP_ID2_DST_MASK;
+	id.src = (id2 >> CSP_ID2_SRC_OFFSET) & CSP_ID2_SRC_MASK;
+	id.dport = (id2 >> CSP_ID2_DPORT_OFFSET) & CSP_ID2_DPORT_MASK;
+	id.sport = (id2 >> CSP_ID2_SPORT_OFFSET) & CSP_ID2_SPORT_MASK;
+	id.flags = (id2 >> CSP_ID2_FLAGS_OFFSET) & CSP_ID2_FLAGS_MASK;
 
-	return 0;
+	return id;
 }
 
 static void csp_id2_setup_rx(csp_packet_t * packet) {
@@ -197,12 +189,22 @@ void csp_id_prepend(csp_packet_t * packet) {
 	}
 }
 
-int csp_id_strip(csp_packet_t * packet) {
+csp_id_t csp_id_extract(const uint8_t * data) {
 	if (csp_conf.version == 2) {
-		return csp_id2_strip(packet);
+		return csp_id2_extract(data);
 	} else {
-		return csp_id1_strip(packet, false);
+		return csp_id1_extract(data, false);
 	}
+}
+
+int csp_id_strip(csp_packet_t * packet) {
+	if (packet->frame_length < csp_id_get_header_size()) {
+		return -1;
+	}
+
+	packet->id = csp_id_extract(packet->frame_begin);
+	packet->length = packet->frame_length - csp_id_get_header_size();
+	return 0;
 }
 
 #if (CSP_FIXUP_V1_ZMQ_LITTLE_ENDIAN)
@@ -216,12 +218,22 @@ void csp_id_prepend_fixup_cspv1(csp_packet_t * packet) {
 	}
 }
 
-int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
+csp_id_t csp_id_extract_fixup_cspv1(const uint8_t * data) {
 	if (csp_conf.version == 2) {
-		return csp_id2_strip(packet);
+		return csp_id2_extract(data);
 	} else {
-		return csp_id1_strip(packet, true);
+		return csp_id1_extract(data, true);
 	}
+}
+
+int csp_id_strip_fixup_cspv1(csp_packet_t * packet) {
+	if (packet->frame_length < csp_id_get_header_size()) {
+		return -1;
+	}
+
+	packet->id = csp_id_extract_fixup_cspv1(packet->frame_begin);
+	packet->length = packet->frame_length - csp_id_get_header_size();
+	return 0;
 }
 
 #endif
