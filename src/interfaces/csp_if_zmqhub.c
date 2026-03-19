@@ -85,29 +85,34 @@ void * csp_zmqhub_task(void * param) {
 			continue;
 		}
 
+		// Copy the data from zmq to csp
+		uint8_t * rx_data = zmq_msg_data(&msg);
+
+		csp_id_t csp_id = csp_id_extract(rx_data);
+
 		// Create new csp packet
-		packet = csp_buffer_get(0);
+		if (csp_iflist_get_by_addr(csp_id.dst) != NULL) {
+			/* The packet is for us, make sure we don't silently ignore the situation if we can't process it */
+			packet = csp_buffer_get_always();
+		} else  {
+			/* The packet is not for us, it is ok to drop it if we don't have enough buffers*/
+			packet = csp_buffer_get(0);
+		}
+
 		if (packet == NULL) {
 			csp_print("RX %s: Failed to get csp_buffer(%u)\n", drv->iface.name, datalen);
 			zmq_msg_close(&msg);
 			continue;
 		}
 
-		// Copy the data from zmq to csp
-		const uint8_t * rx_data = zmq_msg_data(&msg);
-
 		csp_id_setup_rx(packet);
+		packet->id = csp_id;
 
 		memcpy(packet->frame_begin, rx_data, datalen);
 		packet->frame_length = datalen;
+		/* Extract data length */
+		packet->length = packet->frame_length - csp_id_get_header_size();
 
-		/* Parse the frame and strip the ID field */
-		if (csp_id_strip(packet) != 0) {
-			drv->iface.rx_error++;
-			csp_buffer_free(packet);
-		    zmq_msg_close(&msg);
-			continue;
-		}
 
 		// Route packet
 		csp_qfifo_write(packet, &drv->iface, NULL);
