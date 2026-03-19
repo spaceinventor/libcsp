@@ -180,7 +180,9 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_INVAL;
     }
 
-    csp_packet_t * packet = csp_eth_pbuf_find(ifdata, packet_id, task_woken);
+    csp_id_t csp_id = csp_id_extract(eth_frame->frame_begin);
+
+    csp_packet_t * packet = csp_eth_pbuf_find(ifdata, packet_id, csp_id, task_woken);
 
     if (packet == NULL) {
         iface->drop++;
@@ -191,6 +193,7 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
     if (packet->frame_length == 0) {
         /* First segment */
         csp_id_setup_rx(packet);
+        packet->id = csp_id;
         packet->frame_length = frame_length;
         packet->rx_count = 0;
     }
@@ -217,14 +220,9 @@ int csp_eth_rx(csp_iface_t * iface, csp_eth_header_t * eth_frame, uint32_t recei
         return CSP_ERR_NONE;
     }
 
-    csp_eth_pbuf_free(ifdata, packet, false, task_woken);
+	packet->length = packet->frame_length - csp_id_get_header_size();
 
-    if (csp_id_strip(packet) != 0) {
-        csp_print("eth rx packet discarded due to error in ID field\n");
-        iface->frame++;
-        (task_woken) ? csp_buffer_free_isr(packet) : csp_buffer_free(packet);
-        return CSP_ERR_INVAL;
-    }
+    csp_eth_pbuf_free(ifdata, packet, false, task_woken);
 
     /* Record CSP and MAC addresses of source */
     csp_eth_arp_set_addr(eth_frame->ether_shost, packet->id.src);
