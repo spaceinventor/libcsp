@@ -118,7 +118,7 @@ typedef struct {
 typedef struct csp_packet_s {
 
 	uint32_t timestamp_tx;		/*< Time the message was sent */
-	uint32_t timestamp_rx;      /*< Time the message was received */
+	uint64_t timestamp_rx;      /*< Time in ns the message was received (the last fragment) */
 	struct csp_conn_s * conn;   /*< Associated connection (this is used in RDP queue) */
 
 	uint16_t rx_count;          /*< Received bytes */
@@ -130,7 +130,6 @@ typedef struct csp_packet_s {
 
 	uint16_t length;			/*< Data length */
 	csp_id_t id;				/*< CSP id (unpacked version CPU readable) */
-	uint64_t timestamp;			/*< Timestamp in ns for (the last fragment of) the packet */
 
 	struct csp_packet_s * next; /*< Used for lists / queues of packets */
 

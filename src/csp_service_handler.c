@@ -280,7 +280,7 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 
 		case CSP_CMP_CLOCK_TIME_SYNC:
 		case CSP_CMP_CLOCK_CORRECTION_TIME_SYNC:
-			ret = do_cmp_time_sync(cmp, packet->timestamp);
+			ret = do_cmp_time_sync(cmp, packet->timestamp_rx);
 			break;
 
 		default:
