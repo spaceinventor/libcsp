@@ -77,7 +77,7 @@ extern "C" {
 /**
  *  Time correction with Time sync protocol.
  */
-#define CSP_CMP_CLOCK_CORRECTION_TIME_SYNC 11
+#define CSP_CMP_CLOCK_TIME_SYNC_CORRECTION 11
 /**@}*/
 
 /**
@@ -178,9 +178,15 @@ struct csp_cmp_message {
 			uint8_t len;
 			char data[CSP_CMP_POKE_V2_MAX_LEN];
 		} poke_v2;
+		struct {
+			uint16_t id;
+		} time_sync;
+		struct {
+			uint16_t id;
+			uint32_t tv_sec;
+			uint32_t tv_nsec;
+		} time_sync_correction;
 		csp_timestamp_t clock;
-		csp_time_sync_t time_sync;
-		csp_time_sync_correction_t time_sync_correction;
 	};
 } __attribute__((__packed__));
 

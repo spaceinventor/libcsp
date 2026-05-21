@@ -197,34 +197,36 @@ static int do_cmp_clock(struct csp_cmp_message * cmp) {
 	return res;
 }
 
-#define CSP_TIME_SYNC_NUM_OF 2
+#define CSP_TIME_SYNC_NUM_OF 2 /* Must be a power of 2 as & is used below in increment of time_sync_next_idx */
 static uint16_t time_sync_last_id[CSP_TIME_SYNC_NUM_OF];
 static uint64_t time_sync_last_rx[CSP_TIME_SYNC_NUM_OF];
 static uint8_t time_sync_next_idx;
 
-static int do_cmp_time_sync(struct csp_cmp_message *cmp, uint64_t rx_timestamp) {
+static int do_cmp_time_sync(struct csp_cmp_message *cmp, uint64_t local_clock_rx_ns) {
 
 	uint16_t id = be16toh(cmp->time_sync.id);
 
 	if (cmp->code == CSP_CMP_CLOCK_TIME_SYNC) {
 		/* Save sync info */
 		time_sync_last_id[time_sync_next_idx] = id;
-		time_sync_last_rx[time_sync_next_idx] = rx_timestamp;
-		time_sync_next_idx = (time_sync_next_idx + 1) % CSP_TIME_SYNC_NUM_OF;
-	} else if (cmp->code == CSP_CMP_CLOCK_CORRECTION_TIME_SYNC) {
+		time_sync_last_rx[time_sync_next_idx] = local_clock_rx_ns;
+		time_sync_next_idx = (time_sync_next_idx + 1) & CSP_TIME_SYNC_NUM_OF;
+	} else if (cmp->code == CSP_CMP_CLOCK_TIME_SYNC_CORRECTION) {
 		for (uint8_t idx = 0; idx < CSP_TIME_SYNC_NUM_OF; idx++) {
 			if (id == time_sync_last_id[idx] && time_sync_last_rx[idx] > 0) {
-				csp_timestamp_t now_ts;
-				now_ts.tv_sec = be32toh(cmp->time_sync_correction.tv_sec);
-				now_ts.tv_nsec = be32toh(cmp->time_sync_correction.tv_nsec);
+				/* The time received in this packet is the UTC time when the CSP_CMP_CLOCK_TIME_SYNC
+				   packet was send with same id */
+				csp_timestamp_t ts_last_sync;
+				ts_last_sync.tv_sec = be32toh(cmp->time_sync_correction.tv_sec);
+				ts_last_sync.tv_nsec = be32toh(cmp->time_sync_correction.tv_nsec);
 
-				csp_clock_set_time_w_local_time(&now_ts, time_sync_last_rx[idx]);
+				csp_clock_set_time_w_local(&ts_last_sync, time_sync_last_rx[idx]);
 				break;
 			}
 		}
 	}
 
-	return CSP_ERR_INVAL; // TODO: How to indicate that a response should not be send?
+	return CSP_ERR_INVAL; /* Returns an error to indicate that a response should not be send */
 }
 
 /* CSP Management Protocol handler */
@@ -279,8 +281,8 @@ static int csp_cmp_handler(csp_packet_t * packet) {
 			break;
 
 		case CSP_CMP_CLOCK_TIME_SYNC:
-		case CSP_CMP_CLOCK_CORRECTION_TIME_SYNC:
-			ret = do_cmp_time_sync(cmp, packet->timestamp_rx);
+		case CSP_CMP_CLOCK_TIME_SYNC_CORRECTION:
+			ret = do_cmp_time_sync(cmp, packet->local_clock_rx_ns);
 			break;
 
 		default:

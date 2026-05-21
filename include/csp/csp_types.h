@@ -118,7 +118,9 @@ typedef struct {
 typedef struct csp_packet_s {
 
 	uint32_t timestamp_tx;		/*< Time the message was sent */
-	uint64_t timestamp_rx;      /*< Time in ns the message was received (the last fragment) */
+	uint64_t local_clock_rx_ns;	/*< Local clock when the packet was received (the last fragment).
+									The clock is set by driver, using local clock, and is later used
+									in csp_clock_set_time_w_local */
 	struct csp_conn_s * conn;   /*< Associated connection (this is used in RDP queue) */
 
 	uint16_t rx_count;          /*< Received bytes */
@@ -209,22 +211,6 @@ typedef csp_memptr64_t (*csp_memwrite64_fnc_t)(csp_memptr64_t, csp_memptr_t, siz
  * Compile check/asserts.
  */
 #define CSP_STATIC_ASSERT(condition, name)   typedef char name[(condition) ? 1 : -1]
-
-/**
- * Time sync packet format
- */
-typedef struct {
-	uint16_t id;
-} csp_time_sync_t;
-
-/**
- * Time sync correction packet format
- */
-typedef struct {
-	uint16_t id;
-	uint32_t tv_sec;
-	uint32_t tv_nsec;
-} csp_time_sync_correction_t;
 
 #ifdef __cplusplus
 }

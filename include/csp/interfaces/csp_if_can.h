@@ -62,6 +62,7 @@
 #include <csp/csp_interface.h>
 #include <stdint.h>
 #include <stdatomic.h>
+#include "csp/csp_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,31 +185,10 @@ extern "C" {
  * @param[in] id CAM message id.
  * @param[in] data CAN data
  * @param[in] dlc data length of \a data.
+ * @param[in] packet the CSP packet where data is from. Is only valid for END frames else NULL.
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-typedef int (*csp_can_driver_tx_t)(void * driver_data, uint32_t id, const uint8_t * data, uint8_t dlc);
-
-/**
- * Send CAN frame (implemented by driver).
- *
- * Used by csp_can_tx() to send CAN frames.
- *
- * @param[in] driver_data driver data from #csp_iface_t
- * @param[in] id CAM message id.
- * @param[in] data CAN data
- * @param[in] dlc data length of \a data.
- * @param[in] context this pointer is used in csp_can_set_tx_time when packet has been send and timestamp is available
- * @return #CSP_ERR_NONE on success, otherwise an error code.
- */
-typedef int (*csp_can_driver_tx_w_context_t)(void * driver_data, uint32_t id, const uint8_t * data, uint8_t dlc, const void * context);
-
-/**
- * Sets the local TX time when the packet indicated with context was send
- *
- * @param context     Same context as used in csp_can_driver_tx_w_context_t
- * @param tx_time_ns  The local time the packet was send on CAN
- */
-void csp_can_set_tx_time(const void * context, uint64_t tx_time_ns);
+typedef int (*csp_can_driver_tx_t)(void * driver_data, uint32_t id, const uint8_t * data, uint8_t dlc, const csp_packet_t * packet);
 
 /**
  * Interface data (state information).
@@ -217,7 +197,6 @@ typedef struct {
 	atomic_int cfp_packet_counter; /**< CFP Identification number - same number on all fragments from same CSP packet. */
 	csp_can_driver_tx_t tx_func; /**< Tx function */
 	csp_packet_t * pbufs; /**< PBUF queue */
-	csp_can_driver_tx_w_context_t tx_func_w_context; /**< Tx function, will only be used if tx_func is not set */
 } csp_can_interface_data_t;
 
 /**
@@ -262,27 +241,11 @@ int csp_can_tx(csp_iface_t * iface, uint16_t via, csp_packet_t *packet);
  * @param[in] id received CAN message identifier.
  * @param[in] data received CAN data.
  * @param[in] dlc length of received \a data.
+ * @param[in] local_clock_rx_ns local clock when frame was received. Only set for End frames
  * @param[out] pxTaskWoken Valid reference if called from ISR, otherwise NULL!
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int *pxTaskWoken);
-
-/**
- * Process received CAN frame.
- *
- * Called from driver when a single CAN frame (up to 8 bytes) has been received.
- * The function will gather the fragments into a single
- * CSP packet and route it on when complete.
- *
- * @param[in] iface incoming interface.
- * @param[in] id received CAN message identifier.
- * @param[in] data received CAN data.
- * @param[in] dlc length of received \a data.
- * @param[in] timestamp local timestamp when frame was received. Only set for End frames
- * @param[out] pxTaskWoken Valid reference if called from ISR, otherwise NULL!
- * @return #CSP_ERR_NONE on success, otherwise an error code.
- */
-int csp_can_rx_w_timestamp(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, uint64_t timestamp, int *pxTaskWoken);
+int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, uint64_t local_clock_rx_ns, int *pxTaskWoken);
 
 #ifdef __cplusplus
 }

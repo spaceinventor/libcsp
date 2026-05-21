@@ -67,7 +67,9 @@ Definition of a buffer element `csp_packet_t`:
 */
 typedef struct {
     uint32_t timestamp_tx;        // Time the message was sent
-    uint64_t timestamp_rx;        // Time in ns the message was received (the last fragment)
+    uint64_t local_clock_rx_ns;   // Local clock when the packet was received (the last fragment).
+                                  // The clock is set by driver, using local clock, and is later used
+                                  // in csp_clock_set_time_w_local */
 
     uint16_t length;              // Data length
     csp_id_t id;                  // CSP id (unpacked version CPU readable)

@@ -222,7 +222,7 @@ static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	const csp_can_driver_tx_t tx_func = ifdata->tx_func;
 
 	/* Send first frame */
-	if ((tx_func)(iface->driver_data, can_id, frame_buf, CFP1_DATA_OFFSET + data_bytes) != CSP_ERR_NONE) {
+	if ((tx_func)(iface->driver_data, can_id, frame_buf, CFP1_DATA_OFFSET + data_bytes, NULL) != CSP_ERR_NONE) {
 		iface->tx_error++;
 		/* Does not free on return */
 		return CSP_ERR_DRIVER;
@@ -250,7 +250,7 @@ static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 		tx_count += data_bytes;
 
 		/* Send frame */
-		if ((tx_func)(iface->driver_data, can_id, packet->data + tx_count - data_bytes, data_bytes) != CSP_ERR_NONE) {
+		if ((tx_func)(iface->driver_data, can_id, packet->data + tx_count - data_bytes, data_bytes, NULL) != CSP_ERR_NONE) {
 			iface->tx_error++;
 			/* Does not free on return */
 			return CSP_ERR_DRIVER;
@@ -262,7 +262,7 @@ static int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	return CSP_ERR_NONE;
 }
 
-static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken, uint64_t can_timestamp) {
+static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, uint64_t local_clock_rx_ns, int * task_woken) {
 
 	csp_can_interface_data_t * ifdata = iface->interface_data;
 
@@ -353,7 +353,8 @@ static int csp_can2_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, u
 	/* END */
 	if (id & (CFP2_END_MASK << CFP2_END_OFFSET)) {
 
-		packet->timestamp_rx = can_timestamp;
+		/* Remember the local clock for last CFP fragment */
+		packet->local_clock_rx_ns = local_clock_rx_ns;
 
 		/* Extract data length */
 		packet->length = packet->frame_length - csp_id_get_header_size();
@@ -393,7 +394,7 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 
 	uint32_t can_id = 0;
 	uint8_t frame_buf_inp = 0;
-	const void *context = NULL;
+	const csp_packet_t *ctx_packet = NULL;
 
 	/* Pack mandatory fields of header */
 	can_id = (((packet->id.pri & CFP2_PRIO_MASK) << CFP2_PRIO_OFFSET) |
@@ -426,17 +427,11 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	/* Check for end condition */
 	if (tx_count == packet->length) {
 		can_id |= ((1 & CFP2_END_MASK) << CFP2_END_OFFSET);
-		context = packet;
+		ctx_packet = packet;
 	}
 
 	/* Send first frame now */
-	int result;
-	if (ifdata->tx_func)
-		result = ifdata->tx_func(iface->driver_data, can_id, frame_buf, frame_buf_inp);
-	else
-		result = ifdata->tx_func_w_context(iface->driver_data, can_id, frame_buf, frame_buf_inp, context);
-
-	if (result != CSP_ERR_NONE) {
+	if ((ifdata->tx_func)(iface->driver_data, can_id, frame_buf, frame_buf_inp, ctx_packet) != CSP_ERR_NONE) {
 		iface->tx_error++;
 		/* Does not free on return */
 		return CSP_ERR_DRIVER;
@@ -461,15 +456,10 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 		/* Check for end condition */
 		if (tx_count + data_bytes == packet->length) {
 			can_id |= ((1 & CFP2_END_MASK) << CFP2_END_OFFSET);
-			context = packet;
+			ctx_packet = packet;
 		}
 
-		if (ifdata->tx_func)
-			result = ifdata->tx_func(iface->driver_data, can_id, packet->data + tx_count, data_bytes);
-		else
-			result = ifdata->tx_func_w_context(iface->driver_data, can_id, packet->data + tx_count, data_bytes, context);
-
-		if (result != CSP_ERR_NONE) {
+		if ((ifdata->tx_func)(iface->driver_data, can_id, packet->data + tx_count, data_bytes, ctx_packet) != CSP_ERR_NONE) {
 			iface->tx_error++;
 			/* Does not free on return */
 			return CSP_ERR_DRIVER;
@@ -484,14 +474,6 @@ static int csp_can2_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet,
 	return CSP_ERR_NONE;
 }
 
-void csp_can_set_tx_time(const void *context, uint64_t tx_time_ns) {
-
-	if (context == NULL)
-		return;
-
-	csp_set_packet_tx_time(context, tx_time_ns);
-}
-
 int csp_can_add_interface(csp_iface_t * iface) {
 
 	if ((iface == NULL) || (iface->name == NULL) || (iface->interface_data == NULL)) {
@@ -499,7 +481,7 @@ int csp_can_add_interface(csp_iface_t * iface) {
 	}
 
 	csp_can_interface_data_t * ifdata = iface->interface_data;
-	if (ifdata->tx_func == NULL && ifdata->tx_func_w_context == NULL) {
+	if (ifdata->tx_func == NULL) {
 		return CSP_ERR_INVAL;
 	}
 
@@ -527,16 +509,11 @@ int csp_can_remove_interface(csp_iface_t * iface) {
 	return CSP_ERR_NONE;
 }
 
-int csp_can_rx_w_timestamp(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, uint64_t timestamp, int * task_woken) {
+int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, uint64_t local_clock_rx_ns, int * task_woken) {
 
 	if (csp_conf.version == 1) {
 		return csp_can1_rx(iface, id, data, dlc, task_woken);
 	} else {
-		return csp_can2_rx(iface, id, data, dlc, task_woken, timestamp);
+		return csp_can2_rx(iface, id, data, dlc, local_clock_rx_ns, task_woken);
 	}
-}
-
-int csp_can_rx(csp_iface_t * iface, uint32_t id, const uint8_t * data, uint8_t dlc, int * task_woken) {
-
-	return csp_can_rx_w_timestamp(iface, id, data, dlc, 0, task_woken);
 }

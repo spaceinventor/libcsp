@@ -100,24 +100,15 @@ void csp_clock_get_time(csp_timestamp_t * time);
 int csp_clock_set_time(const csp_timestamp_t * time);
 
 /**
- * Set the system time with local time
+ * Set the system time, relative to a specific local clock.
+ *
+ * Can be used for network time implementation.
  *
  * @param time          Structure containing the new time to set
- * @param local_rx_ns   Local time when time occurred
+ * @param local_rx_ns   Local clock where timestamp applies to
  * @return              0 on success, -1 on failure
  */
-int csp_clock_set_time_w_local_time(const csp_timestamp_t * time, uint64_t local_rx_ns);
-
-/**
- * Is called with local timestamp of when the packet was send.
- *
- * The packet has been freed when this function is called and the packet
- * pointer can only be used for address comparison of the packet send.
- *
- * @param packet      Pointer to the packet that was send
- * @param tx_time_ns  The local time the packet was send
- */
-void csp_set_packet_tx_time(const void *packet, uint64_t tx_time_ns);
+int csp_clock_set_time_w_local(const csp_timestamp_t * time, uint64_t local_rx_ns);
 
 #ifdef __cplusplus
 }
