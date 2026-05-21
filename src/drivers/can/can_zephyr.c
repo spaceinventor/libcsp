@@ -83,7 +83,7 @@ static void csp_can_rx_thread(void * arg1, void * arg2, void * arg3) {
 	}
 }
 
-static int csp_can_tx_frame(void * driver_data, uint32_t id, const uint8_t * data, uint8_t dlc) {
+static int csp_can_tx_frame(void * driver_data, uint32_t id, const uint8_t * data, uint8_t dlc, const csp_packet_t *packet) {
 
 	int ret = CSP_ERR_NONE;
 	struct can_frame frame = {0};
