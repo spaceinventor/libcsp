@@ -88,6 +88,7 @@ static int csp_can_tx_frame(void * driver_data, uint32_t id, const uint8_t * dat
 	int ret = CSP_ERR_NONE;
 	struct can_frame frame = {0};
 	can_context_t * ctx = driver_data;
+	(void)packet;
 
 	if (dlc > CAN_MAX_DLEN) {
 		ret = CSP_ERR_INVAL;

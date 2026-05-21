@@ -139,6 +139,7 @@ void CAN_0_irq_callback(struct _can_async_device *dev, enum can_async_interrupt_
 int csp_can_tx_frame(void *driver_data, uint32_t id, const uint8_t * data, uint8_t dlc, const csp_packet_t *packet) {
 
 	struct mcan_s * driver = (struct mcan_s *)driver_data;
+	(void)packet;
 
 	if ((driver == NULL) || (driver->lock == NULL)) {
 		return 0;
