@@ -12,13 +12,19 @@ void csp_service_handler(csp_packet_t * packet) {
 
 	switch (packet->id.dport) {
 
-		case CSP_CMP:
+		case CSP_CMP: {
 			/* Pass to CMP handler */
-			if (csp_cmp_handler(packet) != CSP_ERR_NONE) {
+			int ret = csp_cmp_handler(packet);
+			if (ret == CSP_CMP_NO_REPLY) {
+				csp_buffer_free(packet);
+				return;
+			}
+			if (ret != CSP_ERR_NONE) {
 				csp_buffer_free(packet);
 				return;
 			}
 			break;
+		}
 
 		case CSP_PING:
 			/* A ping means, just echo the packet, so no changes */
