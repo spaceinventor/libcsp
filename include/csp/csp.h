@@ -22,29 +22,30 @@ extern "C" {
 
 /** Max delay */
 #define CSP_MAX_DELAY CSP_MAX_TIMEOUT
-#define CSP_INFINITY CSP_MAX_TIMEOUT
-
+#define CSP_INFINITY  CSP_MAX_TIMEOUT
 
 /**
  * CSP Debug Types
  */
 enum csp_dedup_types {
-   CSP_DEDUP_OFF,              /**< Deduplication off */
-   CSP_DEDUP_FWD,              /**< Deduplication on forwarding only */
-   CSP_DEDUP_INCOMING,         /**< Deduplication on incomfing only */
-   CSP_DEDUP_ALL,              /**< Deduplication on incoming and forwarding*/
+	CSP_DEDUP_OFF,      /**< Deduplication off */
+	CSP_DEDUP_FWD,      /**< Deduplication on forwarding only */
+	CSP_DEDUP_INCOMING, /**< Deduplication on incomfing only */
+	CSP_DEDUP_ALL,      /**< Deduplication on incoming and forwarding*/
 };
 
 /**
  * CSP configuration.
  */
 typedef struct csp_conf_s {
-   uint8_t version;            /**< Protocol version to use (either 1 or 2) */
-   const char *hostname;       /**< Host name, returned by the #CSP_CMP_IDENT request */
-   const char *model;          /**< Model, returned by the #CSP_CMP_IDENT request */
-   const char *revision;       /**< Revision, returned by the #CSP_CMP_IDENT request */
-   uint32_t conn_dfl_so;       /**< Default connection options. Options will always be or'ed onto new connections, see csp_connect() */
-   uint8_t dedup;              /**< Enable CSP deduplication. 0 = off, 1 = always on, 2 = only on forwarded packets,  */
+	uint8_t version;       /**< Protocol version to use (either 1 or 2) */
+	const char * hostname; /**< Host name, returned by the #CSP_CMP_IDENT request */
+	const char * model;    /**< Model, returned by the #CSP_CMP_IDENT request */
+	const char * revision; /**< Revision, returned by the #CSP_CMP_IDENT request */
+	const char * date;     /**< Date, returned by the #CSP_CMP_IDENT request */
+	const char * time;     /**< Time, returned by the #CSP_CMP_IDENT request */
+	uint32_t conn_dfl_so;  /**< Default connection options. Options will always be or'ed onto new connections, see csp_connect() */
+	uint8_t dedup;         /**< Enable CSP deduplication. 0 = off, 1 = always on, 2 = only on forwarded packets,  */
 } csp_conf_t;
 
 extern csp_conf_t csp_conf;
@@ -79,7 +80,7 @@ void csp_id_clear(csp_id_t * target);
  * @param[in] timeout  timeout in mS to wait for a connection, use CSP_MAX_TIMEOUT for infinite timeout.
  * @return New connection on success, NULL on failure or timeout.
  */
-csp_conn_t *csp_accept(csp_socket_t *socket, uint32_t timeout);
+csp_conn_t * csp_accept(csp_socket_t * socket, uint32_t timeout);
 
 /**
  * Read packet from a connection.
@@ -89,7 +90,7 @@ csp_conn_t *csp_accept(csp_socket_t *socket, uint32_t timeout);
  * @param[in] timeout timeout in mS to wait for a packet, use CSP_MAX_TIMEOUT for infinite timeout.
  * @return Packet or NULL in case of failure or timeout.
  */
-csp_packet_t *csp_read(csp_conn_t *conn, uint32_t timeout);
+csp_packet_t * csp_read(csp_conn_t * conn, uint32_t timeout);
 
 /**
  * Send packet on a connection.
@@ -97,8 +98,8 @@ csp_packet_t *csp_read(csp_conn_t *conn, uint32_t timeout);
  *
  * @param[in] conn connection
  * @param[in] packet packet to send
-*/
-void csp_send(csp_conn_t *conn, csp_packet_t *packet);
+ */
+void csp_send(csp_conn_t * conn, csp_packet_t * packet);
 
 /**
  * Change the default priority of the connection and send a packet.
@@ -110,26 +111,26 @@ void csp_send(csp_conn_t *conn, csp_packet_t *packet);
  * @param[in] conn connection
  * @param[in] packet packet to send
  */
-void csp_send_prio(uint8_t prio, csp_conn_t *conn, csp_packet_t *packet);
+void csp_send_prio(uint8_t prio, csp_conn_t * conn, csp_packet_t * packet);
 
 /**
  * Perform an entire request & reply transaction.
  * Creates a connection, send \a outbuf, wait for reply, copy reply to \a inbuf and close the connection.
-*
-* @param[in] prio priority, see #csp_prio_t
-* @param[in] dst destination address
-* @param[in] dst_port destination port
-* @param[in] timeout timeout in mS to wait for a reply
-* @param[in] outbuf outgoing data (request)
-* @param[in] outlen length of data in \a outbuf (request)
-* @param[out] inbuf user provided buffer for receiving data (reply)
-* @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
-* @param[in] opts connection options, see @ref CSP_CONNECTION_OPTIONS.
-*
-* Returns:
-*   int: 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
-*/
-int csp_transaction_w_opts(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, const void *outbuf, int outlen, void *inbuf, int inlen, uint32_t opts);
+ *
+ * @param[in] prio priority, see #csp_prio_t
+ * @param[in] dst destination address
+ * @param[in] dst_port destination port
+ * @param[in] timeout timeout in mS to wait for a reply
+ * @param[in] outbuf outgoing data (request)
+ * @param[in] outlen length of data in \a outbuf (request)
+ * @param[out] inbuf user provided buffer for receiving data (reply)
+ * @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
+ * @param[in] opts connection options, see @ref CSP_CONNECTION_OPTIONS.
+ *
+ * Returns:
+ *   int: 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
+ */
+int csp_transaction_w_opts(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, const void * outbuf, int outlen, void * inbuf, int inlen, uint32_t opts);
 
 /**
  * Perform an entire request & reply transaction.
@@ -146,7 +147,7 @@ int csp_transaction_w_opts(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_
  * @return 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
  */
 static inline int csp_transaction(uint8_t prio, uint16_t dest, uint8_t port, uint32_t timeout, const void * outbuf, int outlen, void * inbuf, int inlen) {
-   return csp_transaction_w_opts(prio, dest, port, timeout, outbuf, outlen, inbuf, inlen, 0);
+	return csp_transaction_w_opts(prio, dest, port, timeout, outbuf, outlen, inbuf, inlen, 0);
 }
 
 /**
@@ -161,7 +162,7 @@ static inline int csp_transaction(uint8_t prio, uint16_t dest, uint8_t port, uin
  * @param[in] inlen length of expected reply, -1 for unknown size (inbuf MUST be large enough), 0 for no reply.
  * @return 1 or reply size on success, 0 on failure (error, incoming length does not match, timeout)
  */
-int csp_transaction_persistent(csp_conn_t *conn, uint32_t timeout, const void *outbuf, int outlen, void *inbuf, int inlen);
+int csp_transaction_persistent(csp_conn_t * conn, uint32_t timeout, const void * outbuf, int outlen, void * inbuf, int inlen);
 
 /**
  * Read data from a connection-less server socket.
@@ -170,7 +171,7 @@ int csp_transaction_persistent(csp_conn_t *conn, uint32_t timeout, const void *o
  * @param[in] timeout timeout in mS to wait for a packet, use #CSP_MAX_TIMEOUT for infinite timeout.
  * @return Packet on success, or NULL on failure or timeout.
  */
-csp_packet_t *csp_recvfrom(csp_socket_t *socket, uint32_t timeout);
+csp_packet_t * csp_recvfrom(csp_socket_t * socket, uint32_t timeout);
 
 /**
  * Send a packet (without connection).
@@ -182,7 +183,7 @@ csp_packet_t *csp_recvfrom(csp_socket_t *socket, uint32_t timeout);
  * @param[in] opts connection options, see @ref CSP_CONNECTION_OPTIONS.
  * @param[in] packet packet to send
  */
-void csp_sendto(uint8_t prio, uint16_t dst, uint8_t dst_port, uint8_t src_port, uint32_t opts, csp_packet_t *packet);
+void csp_sendto(uint8_t prio, uint16_t dst, uint8_t dst_port, uint8_t src_port, uint32_t opts, csp_packet_t * packet);
 
 /**
  * Send a packet as a reply to a request (without a connection).
@@ -205,8 +206,8 @@ void csp_sendto_reply(const csp_packet_t * request, csp_packet_t * reply, uint32
  * @param[in] timeout unused.
  * @param[in] opts connection options, see @ref CSP_CONNECTION_OPTIONS.
  * @return Established connection or NULL on failure (no free connections, timeout).
-*/
-csp_conn_t *csp_connect(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, uint32_t opts);
+ */
+csp_conn_t * csp_connect(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t timeout, uint32_t opts);
 
 /**
  * Close an open connection.
@@ -215,7 +216,7 @@ csp_conn_t *csp_connect(uint8_t prio, uint16_t dst, uint8_t dst_port, uint32_t t
  * @param[in] conn connection. Closing a NULL connection is acceptable.
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_close(csp_conn_t *conn);
+int csp_close(csp_conn_t * conn);
 
 /**
  * Close a socket, freeing it's RX queue and unbinding it from the associated
@@ -224,7 +225,7 @@ int csp_close(csp_conn_t *conn);
  * @param[in] sock Socket
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_socket_close(csp_socket_t* sock);
+int csp_socket_close(csp_socket_t * sock);
 
 /**
  * Return destination port of connection.
@@ -232,7 +233,7 @@ int csp_socket_close(csp_socket_t* sock);
  * @param[in] conn connection
  * @return destination port of an incoming connection
  */
-int csp_conn_dport(const csp_conn_t *conn);
+int csp_conn_dport(const csp_conn_t * conn);
 
 /**
  * Return source port of connection.
@@ -240,7 +241,7 @@ int csp_conn_dport(const csp_conn_t *conn);
  * @param[in] conn connection
  * @return source port of an incoming connection
  */
-int csp_conn_sport(const csp_conn_t *conn);
+int csp_conn_sport(const csp_conn_t * conn);
 
 /**
  * Return destination address of connection.
@@ -248,7 +249,7 @@ int csp_conn_sport(const csp_conn_t *conn);
  * @param[in] conn connection
  * @return destination address of an incoming connection
  */
-int csp_conn_dst(const csp_conn_t *conn);
+int csp_conn_dst(const csp_conn_t * conn);
 
 /**
  * Return source address of connection.
@@ -256,7 +257,7 @@ int csp_conn_dst(const csp_conn_t *conn);
  * @param[in] conn connection
  * @return source address of an incoming connection
  */
-int csp_conn_src(const csp_conn_t *conn);
+int csp_conn_src(const csp_conn_t * conn);
 
 /**
  * Return flags of connection.
@@ -264,21 +265,21 @@ int csp_conn_src(const csp_conn_t *conn);
  * @param[in] conn connection
  * @return flags of an incoming connection, see @ref CSP_HEADER_FLAGS
  */
-int csp_conn_flags(const csp_conn_t *conn);
+int csp_conn_flags(const csp_conn_t * conn);
 
 /**
  * Return if the CSP connection is active
- * 
+ *
  * Active in this context means if the protocol layers is connected and no time outs has happened.
  * Especially if a connection is marked as a RDP connection, the active state means that the
  * RDP layers are connected and no time outs have happened. If the RDP layer has a connection timeout
  * or of the connection is closing, the connection is inactive, and ready to be closed.
- * 
+ *
  * @param conn connection
  * @return true if the connection is active
  * @return false if the connection is in-active
  */
-bool csp_conn_is_active(csp_conn_t *conn);
+bool csp_conn_is_active(csp_conn_t * conn);
 
 /**
  * Set socket to listen for incoming connections.
@@ -286,8 +287,8 @@ bool csp_conn_is_active(csp_conn_t *conn);
  * @param[in] socket socket
  * @param[in] backlog max length of backlog queue. The backlog queue holds incoming connections, waiting to be returned by call to csp_accept().
  * @return #CSP_ERR_NONE on success, otherwise an error code.
-*/
-int csp_listen(csp_socket_t *socket, size_t backlog);
+ */
+int csp_listen(csp_socket_t * socket, size_t backlog);
 
 /**
  * Bind port to socket.
@@ -296,8 +297,7 @@ int csp_listen(csp_socket_t *socket, size_t backlog);
  * @param[in] port port number to bind, use #CSP_ANY for all ports. Binding to a specific will take precedence over #CSP_ANY.
  * @return #CSP_ERR_NONE on success, otherwise an error code.
  */
-int csp_bind(csp_socket_t *socket, uint8_t port);
-
+int csp_bind(csp_socket_t * socket, uint8_t port);
 
 /**
  * Bind port to callback function.
@@ -339,7 +339,7 @@ void csp_bridge_work(void);
  *
  * @param[in] packet first packet, obtained by using csp_read()
  */
-void csp_service_handler(csp_packet_t *packet);
+void csp_service_handler(csp_packet_t * packet);
 
 /**
  * Send a single ping/echo packet.
@@ -457,8 +457,8 @@ int csp_get_uptime(uint16_t node, uint32_t timeout, uint32_t * uptime);
  *
  */
 void csp_rdp_set_opt(unsigned int window_size, unsigned int conn_timeout_ms,
-	  unsigned int packet_timeout_ms, unsigned int delayed_acks,
-	  unsigned int ack_timeout, unsigned int ack_delay_count);
+					 unsigned int packet_timeout_ms, unsigned int delayed_acks,
+					 unsigned int ack_timeout, unsigned int ack_delay_count);
 
 /**
  * Get RDP options. @see csp_rdp_set_opt()
@@ -470,9 +470,9 @@ void csp_rdp_set_opt(unsigned int window_size, unsigned int conn_timeout_ms,
  * @param[out] ack_timeout acknowledgement timeout when delayed ACKs is enabled
  * @param[out] ack_delay_count send acknowledgement for every ack_delay_count packets
  */
-void csp_rdp_get_opt(unsigned int *window_size, unsigned int *conn_timeout_ms,
-	  unsigned int *packet_timeout_ms, unsigned int *delayed_acks,
-	  unsigned int *ack_timeout, unsigned int *ack_delay_count);
+void csp_rdp_get_opt(unsigned int * window_size, unsigned int * conn_timeout_ms,
+					 unsigned int * packet_timeout_ms, unsigned int * delayed_acks,
+					 unsigned int * ack_timeout, unsigned int * ack_delay_count);
 
 /**
  * Deprecated: override csp_cmp_memcpy(), csp_cmp_memread64(), or
@@ -505,12 +505,12 @@ void csp_conn_print_table(void);
  * @param[in] len number of bytes to dump, starting from \a addr.
  *
  */
-void csp_hex_dump(const char *desc, const void *addr, int len);
+void csp_hex_dump(const char * desc, const void * addr, int len);
 
 #else
 
 inline void csp_conn_print_table(void) {}
-inline void csp_hex_dump(const char *desc, void *addr, int len) {}
+inline void csp_hex_dump(const char * desc, void * addr, int len) {}
 
 #endif
 
@@ -521,11 +521,11 @@ inline void csp_hex_dump(const char *desc, void *addr, int len) {}
 int csp_conn_print_table_str(char * str_buf, int str_size);
 #else
 inline int csp_conn_print_table_str(char * str_buf, int str_size) {
-   if (str_buf != NULL && str_size > 0) {
-	  str_buf[0] = '\0';
-   }
+	if (str_buf != NULL && str_size > 0) {
+		str_buf[0] = '\0';
+	}
 
-   return CSP_ERR_NONE;
+	return CSP_ERR_NONE;
 }
 #endif
 

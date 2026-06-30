@@ -19,6 +19,8 @@ csp_conf_t csp_conf = {
 	.hostname = "",
 	.model = "",
 	.revision = "",
+	.date = "",
+	.time = "",
 	.conn_dfl_so = CSP_O_NONE,
 	.dedup = CSP_DEDUP_OFF};
 
@@ -44,7 +46,6 @@ void csp_init(void) {
 	/* Loopback */
 	csp_if_lo.netmask = csp_id_get_host_bits();
 	csp_iflist_add(&csp_if_lo);
-
 }
 
 const csp_conf_t * csp_get_conf(void) {
