@@ -20,9 +20,10 @@ csp_conf_t csp_conf = {
 	.model = "",
 	.revision = "",
 	.conn_dfl_so = CSP_O_NONE,
-	.dedup = CSP_DEDUP_OFF},
+	.dedup = CSP_DEDUP_OFF
 	.date = "",
 	.time = "",
+};
 
 void csp_init(void) {
 
