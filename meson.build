@@ -100,7 +100,6 @@ csp_lib = library('csp',
 	dependencies : csp_deps,
 	c_args : csp_c_args,
 	install : true,
-	pic:true,
 	version : meson.project_version(),
 )
 
