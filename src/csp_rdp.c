@@ -305,7 +305,7 @@ static inline bool csp_rdp_should_ack(csp_conn_t * conn) {
 int csp_rdp_check_ack(csp_conn_t * conn) {
 
 	/* Check RX queue for spare capacity */
-	if ((unsigned int) abs(CSP_CONN_RXQUEUE_LEN - csp_queue_size(conn->rx_queue)) < conn->rdp.window_size) {
+	if ((uint32_t)csp_queue_free(conn->rx_queue) <= conn->rdp.window_size) {
 		return CSP_ERR_NONE;
 	}
 
@@ -673,7 +673,7 @@ bool csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 			if (packet->length <= sizeof(rdp_header_t))
 				goto discard_open;
 
-			/* If message is not in sequence, send EACK and store packet */
+			/* If message is not in sequence, store packet for next flush */
 			if (rx_header->seq_nr != (uint16_t)(conn->rdp.rcv_cur + 1)) {
 				if (csp_rdp_rx_queue_add(conn, packet, rx_header->seq_nr) != CSP_ERR_NONE) {
 					csp_rdp_check_ack(conn);
@@ -737,7 +737,9 @@ discard_close:
 	 * by sending a NULL pointer, user-space must close connection */
 	if (conn->dest_socket == NULL) {
 		csp_conn_close(conn, closed_by);
-		csp_conn_enqueue_packet(conn, NULL);
+		if (csp_conn_enqueue_packet(conn, NULL) != CSP_ERR_NONE) {
+			csp_rdp_error("RDP %p: Could not signal close to userspace, RX queue full\n", (void *)conn);
+		}
 	} else {
 		/* New connection, userspace doesn't know anything about it yet - so it can be completely closed */
 		csp_conn_close(conn, closed_by | CSP_RDP_CLOSED_BY_USERSPACE);
