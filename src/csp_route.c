@@ -169,11 +169,23 @@ static void csp_route_deliver_connection(csp_conn_t * conn, csp_socket_t * socke
 		/* Store the socket queue and options */
 		conn->dest_socket = socket;
 		conn->opts = socket->opts;
+#if (CSP_USE_RDP)
+		if (packet->id.flags & CSP_FRDP) {
+			conn->opts |= CSP_SO_RDPREQ;
+		}
+#endif
 	}
 
 #if (CSP_USE_RDP)
 	/* Pass packet to RDP module */
 	if (packet->id.flags & CSP_FRDP) {
+
+		/* Only a connection established as RDP may enter */
+		if (!(conn->opts & CSP_SO_RDPREQ)) {
+			csp_buffer_free(packet);
+			return;
+		}
+
 		bool close_connection = csp_rdp_new_packet(conn, packet);
 		if (close_connection) {
 			csp_close(conn);
