@@ -212,6 +212,7 @@ int csp_can1_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int fr
 	 */
 
 	/* Copy CSP 1.x headers and data: Always 4 bytes */
+	packet->id.dst = 31;
 	csp_id_prepend(packet);
 	memcpy(frame_buf + CFP1_CSP_HEADER_OFFSET, packet->frame_begin, CFP1_CSP_HEADER_SIZE);
 
